@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_md">
+
+    <!-- Skeleton Sensor Header -->
+    <View
+        android:layout_width="120dp"
+        android:layout_height="18dp"
+        android:layout_marginBottom="@dimen/spacing_sm"
+        android:background="@color/shimmer_base" />
+
+    <!-- Skeleton Sensors Grid (2 items) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_marginEnd="@dimen/spacing_xs"
+            android:layout_weight="1"
+            android:background="@drawable/bg_banner_offline"
+            android:backgroundTint="@color/shimmer_base" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_marginStart="@dimen/spacing_xs"
+            android:layout_weight="1"
+            android:background="@drawable/bg_banner_offline"
+            android:backgroundTint="@color/shimmer_base" />
+    </LinearLayout>
+
+    <!-- Skeleton Last Reading Card -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginTop="@dimen/spacing_md"
+        android:background="@drawable/bg_banner_offline"
+        android:backgroundTint="@color/shimmer_base" />
+
+    <!-- Skeleton Device Status Card -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="@dimen/spacing_md"
+        android:background="@drawable/bg_banner_offline"
+        android:backgroundTint="@color/shimmer_base" />
+
+    <!-- Skeleton Flagged Event Card -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="88dp"
+        android:layout_marginTop="@dimen/spacing_md"
+        android:background="@drawable/bg_banner_offline"
+        android:backgroundTint="@color/shimmer_base" />
+
+</LinearLayout>

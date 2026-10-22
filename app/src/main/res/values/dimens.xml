@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Border Radii: 8 to 10dp industrial corners, not overly round -->
+    <dimen name="radius_small">4dp</dimen>
+    <dimen name="radius_medium">8dp</dimen>
+    <dimen name="radius_card">8dp</dimen>
+    <dimen name="radius_large">10dp</dimen>
+    <dimen name="radius_pill">999dp</dimen>
+
+    <!-- Spacings & Margins -->
+    <dimen name="spacing_xxs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">12dp</dimen>
+    <dimen name="spacing_lg">16dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    <dimen name="spacing_xxl">32dp</dimen>
+
+    <!-- Component Dimensions -->
+    <dimen name="icon_size_sm">16dp</dimen>
+    <dimen name="icon_size_md">22dp</dimen>
+    <dimen name="icon_size_lg">30dp</dimen>
+    <dimen name="status_dot_size">8dp</dimen>
+    <dimen name="card_stroke_width">1dp</dimen>
+
+    <!-- Typography Dimensions -->
+    <dimen name="text_size_xs">11sp</dimen>
+    <dimen name="text_size_sm">12sp</dimen>
+    <dimen name="text_size_body">14sp</dimen>
+    <dimen name="text_size_subtitle">15sp</dimen>
+    <dimen name="text_size_title">17sp</dimen>
+    <dimen name="text_size_metric">26sp</dimen>
+    <dimen name="chart_height">180dp</dimen>
+</resources>

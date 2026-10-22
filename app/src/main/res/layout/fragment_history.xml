@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_base"
+    android:orientation="vertical">
+
+    <!-- 1. Header: cogxar text flush left (no logo image, no leftover margin) -->
+    <LinearLayout
+        android:id="@+id/ll_history_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/spacing_lg"
+        android:paddingTop="@dimen/spacing_md"
+        android:paddingBottom="@dimen/spacing_xs">
+
+        <TextView
+            android:id="@+id/tv_history_app_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-black"
+            android:text="@string/app_name"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <!-- 2. Title Row & Dropdown Controls (Machine + Time Range) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/spacing_lg"
+        android:paddingTop="@dimen/spacing_xs">
+
+        <!-- Screen Title -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="@dimen/icon_size_md"
+                android:layout_height="@dimen/icon_size_md"
+                android:contentDescription="@string/history_screen_title"
+                android:src="@drawable/ic_history"
+                app:tint="@color/accent_brand" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/history_screen_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_size_title" />
+        </LinearLayout>
+
+        <!-- Dropdowns Row: Machine (55%) + Time Range (45%) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <!-- Machine Selector Dropdown -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/spacing_xs"
+                android:layout_weight="1.2"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/section_machines"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_muted"
+                    android:textSize="@dimen/text_size_xs" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_history_machine"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_medium"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_medium"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_medium"
+                    app:boxCornerRadiusTopStart="@dimen/radius_medium"
+                    app:boxStrokeColor="@color/border_card"
+                    app:endIconTint="@color/accent_brand"
+                    app:hintEnabled="false">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/actv_history_machine_dropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/cd_machine_selector"
+                        android:fontFamily="sans-serif-medium"
+                        android:inputType="none"
+                        android:padding="@dimen/spacing_md"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/text_size_body"
+                        tools:text="Pump 01" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- Time-Range Dropdown (1 hour, 1 day, 7 days) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_weight="1.0"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="TIME RANGE"
+                    android:textAllCaps="true"
+                    android:textColor="@color/text_muted"
+                    android:textSize="@dimen/text_size_xs" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_history_range"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxCornerRadiusBottomEnd="@dimen/radius_medium"
+                    app:boxCornerRadiusBottomStart="@dimen/radius_medium"
+                    app:boxCornerRadiusTopEnd="@dimen/radius_medium"
+                    app:boxCornerRadiusTopStart="@dimen/radius_medium"
+                    app:boxStrokeColor="@color/border_card"
+                    app:endIconTint="@color/accent_brand"
+                    app:hintEnabled="false">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/actv_history_range_dropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/cd_range_selector"
+                        android:fontFamily="sans-serif-medium"
+                        android:inputType="none"
+                        android:padding="@dimen/spacing_md"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/text_size_body"
+                        tools:text="1 day" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 3. SwipeRefreshLayout wrapping Main Scrolling Container -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/history_swipe_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/spacing_xs">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- Single Scrolling Container for Data Log Table -->
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/nsv_history_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="@dimen/spacing_lg"
+                    android:paddingBottom="@dimen/spacing_xxl">
+
+                    <!-- Section: Readings Log Header + Export Button Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/history_table_title"
+                            android:textAllCaps="true"
+                            android:textColor="@color/text_muted"
+                            android:textSize="@dimen/text_size_xs" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_export"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:contentDescription="@string/cd_history_export"
+                            android:enabled="false"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="@dimen/spacing_md"
+                            android:paddingVertical="0dp"
+                            android:text="@string/history_btn_export"
+                            android:textColor="@color/accent_brand"
+                            android:textSize="@dimen/text_size_xs"
+                            app:cornerRadius="@dimen/radius_medium"
+                            app:strokeColor="@color/accent_brand"
+                            app:strokeWidth="1dp" />
+
+                    </LinearLayout>
+
+                    <!-- Readings Table Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_xs"
+                        app:cardBackgroundColor="@color/bg_card"
+                        app:cardCornerRadius="@dimen/radius_card"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/border_card"
+                        app:strokeWidth="@dimen/card_stroke_width">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <!-- Table Header Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@color/bg_input"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="@dimen/spacing_md"
+                                android:paddingVertical="@dimen/spacing_sm">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.4"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/history_col_time"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.0"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:gravity="center"
+                                    android:text="@string/history_col_temp"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.0"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:gravity="center"
+                                    android:text="@string/history_col_vib"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1.2"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:gravity="end"
+                                    android:text="@string/history_col_flag"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                            </LinearLayout>
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="@color/border_card" />
+
+                            <!-- Readings Table RecyclerView (nested scrolling disabled to use outer scrollview) -->
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/rv_history_table"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:contentDescription="@string/cd_history_table"
+                                android:nestedScrollingEnabled="false"
+                                tools:itemCount="5"
+                                tools:listitem="@layout/item_history_reading" />
+
+                            <!-- Show More Button -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_show_more"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="@dimen/spacing_md"
+                                android:text="@string/history_btn_show_more"
+                                android:textColor="@color/accent_brand"
+                                app:cornerRadius="@dimen/radius_medium"
+                                app:strokeColor="@color/accent_brand"
+                                app:strokeWidth="1dp" />
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <!-- Loading Skeleton Shimmer -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/history_shimmer_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                app:shimmer_auto_start="false"
+                app:shimmer_base_color="@color/shimmer_base"
+                app:shimmer_highlight_color="@color/shimmer_highlight">
+
+                <include layout="@layout/layout_skeleton_dashboard" />
+
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Empty State View -->
+            <LinearLayout
+                android:id="@+id/layout_history_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_xl"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:alpha="0.6"
+                    android:contentDescription="@string/empty_title"
+                    android:src="@drawable/ic_history"
+                    app:tint="@color/text_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/history_empty_range"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_size_title" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    android:gravity="center"
+                    android:text="@string/empty_message"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_size_body" />
+
+            </LinearLayout>
+
+            <!-- Error State View (Included Layout) -->
+            <include
+                android:id="@+id/layout_history_error"
+                layout="@layout/layout_error_state"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+</LinearLayout>

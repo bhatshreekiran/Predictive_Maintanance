@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="@dimen/spacing_sm"
+    android:paddingHorizontal="@dimen/spacing_md">
+
+    <!-- Column 1: Time (Local time) -->
+    <TextView
+        android:id="@+id/tv_col_time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.4"
+        android:fontFamily="sans-serif"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_size_sm"
+        tools:text="10:21:00 AM" />
+
+    <!-- Column 2: Temp (°C) -->
+    <TextView
+        android:id="@+id/tv_col_temp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.0"
+        android:fontFamily="monospace"
+        android:gravity="center"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_size_sm"
+        tools:text="72.4 °C" />
+
+    <!-- Column 3: Vibration (mm/s) -->
+    <TextView
+        android:id="@+id/tv_col_vib"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.0"
+        android:fontFamily="monospace"
+        android:gravity="center"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_size_sm"
+        tools:text="4.2 mm/s" />
+
+    <!-- Column 4: Flag (ANOMALY / NORMAL) -->
+    <TextView
+        android:id="@+id/tv_col_flag"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.2"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="end"
+        android:textSize="@dimen/text_size_xs"
+        tools:text="NORMAL"
+        tools:textColor="@color/status_green" />
+
+</LinearLayout>

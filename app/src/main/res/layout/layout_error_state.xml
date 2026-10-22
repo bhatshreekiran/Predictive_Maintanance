@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layout_error_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_xl"
+    android:visibility="gone">
+
+    <ImageView
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:contentDescription="@string/error_title"
+        android:src="@drawable/ic_warning_triangle"
+        app:tint="@color/status_red" />
+
+    <TextView
+        android:id="@+id/tv_error_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_md"
+        android:fontFamily="sans-serif-medium"
+        android:text="@string/error_title"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_size_title" />
+
+    <TextView
+        android:id="@+id/tv_error_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:gravity="center"
+        android:text="@string/error_default_message"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_size_body" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_retry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_lg"
+        android:backgroundTint="@color/accent_brand"
+        android:text="@string/btn_retry"
+        android:textColor="@color/bg_base"
+        app:cornerRadius="@dimen/radius_medium" />
+
+</LinearLayout>

@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_base">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- 1. Header: Logo Placeholder + cogxar + Debug settings button -->
+        <LinearLayout
+            android:id="@+id/ll_top_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/bg_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/spacing_lg"
+            android:paddingVertical="@dimen/spacing_md">
+
+            <TextView
+                android:id="@+id/tv_app_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-black"
+                android:text="@string/app_name"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp" />
+
+            <!-- Debug Variant Picker Button (Configured in code, debug-only) -->
+            <ImageButton
+                android:id="@+id/btn_debug_variant"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_debug_settings"
+                android:src="@drawable/ic_settings"
+                android:visibility="gone"
+                app:tint="@color/text_secondary"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <!-- Dynamic Warning Banner (Offline or Stale) -->
+        <FrameLayout
+            android:id="@+id/fl_banner_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="@dimen/spacing_lg"
+            android:paddingTop="@dimen/spacing_sm"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <!-- Device Offline Banner -->
+            <LinearLayout
+                android:id="@+id/banner_offline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_banner_offline"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/spacing_sm"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:contentDescription="@string/cd_anomaly_icon"
+                    android:src="@drawable/ic_warning_triangle"
+                    app:tint="@color/status_red" />
+
+                <TextView
+                    android:id="@+id/tv_banner_offline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_sm"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/status_red"
+                    android:textSize="@dimen/text_size_xs"
+                    tools:text="Device is currently offline (Last seen: 5 min ago)" />
+            </LinearLayout>
+
+            <!-- Stale Data Banner -->
+            <LinearLayout
+                android:id="@+id/banner_stale"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_banner_stale"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/spacing_sm"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:contentDescription="@string/card_last_reading_title"
+                    android:src="@drawable/ic_refresh"
+                    app:tint="@color/status_amber" />
+
+                <TextView
+                    android:id="@+id/tv_banner_stale"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_sm"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/status_amber"
+                    android:textSize="@dimen/text_size_xs"
+                    tools:text="Data may be outdated (Last updated 45s ago)" />
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- Connection Indicator (Connected / Reconnecting / Server Unreachable) -->
+        <TextView
+            android:id="@+id/tv_connection_indicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/status_amber_dim"
+            android:gravity="center"
+            android:paddingVertical="4dp"
+            android:textColor="@color/status_amber"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="Reconnecting to server…"
+            tools:visibility="visible" />
+
+        <!-- 2. Title Row & 3. Machine Dropdown -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/spacing_lg"
+            android:paddingTop="@dimen/spacing_md">
+
+            <!-- Title: "Predictive Maintenance Monitor" -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/app_subtitle"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_size_title" />
+
+            <!-- "Machines" Label + Dropdown -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/section_machines"
+                android:textAllCaps="true"
+                android:textColor="@color/text_muted"
+                android:textSize="@dimen/text_size_xs" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_machine_selector"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_xs"
+                app:boxBackgroundColor="@color/bg_input"
+                app:boxCornerRadiusBottomEnd="@dimen/radius_medium"
+                app:boxCornerRadiusBottomStart="@dimen/radius_medium"
+                app:boxCornerRadiusTopEnd="@dimen/radius_medium"
+                app:boxCornerRadiusTopStart="@dimen/radius_medium"
+                app:boxStrokeColor="@color/border_card"
+                app:endIconTint="@color/accent_brand"
+                app:hintEnabled="false">
+
+                <AutoCompleteTextView
+                    android:id="@+id/actv_machine_dropdown"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/cd_machine_selector"
+                    android:fontFamily="sans-serif-medium"
+                    android:inputType="none"
+                    android:padding="@dimen/spacing_md"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_size_body"
+                    tools:text="Pump 01" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- SwipeRefreshLayout wrapping Main Content & Skeletons -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/spacing_sm">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- Scrollable Content -->
+                <androidx.core.widget.NestedScrollView
+                    android:id="@+id/nsv_dashboard_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="@dimen/spacing_lg"
+                        android:paddingBottom="@dimen/spacing_xl">
+
+                        <!-- 4. Sensors Section Header -->
+                        <TextView
+                            android:id="@+id/tv_sensors_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/section_sensors_title"
+                            android:textAllCaps="true"
+                            android:textColor="@color/text_muted"
+                            android:textSize="@dimen/text_size_xs" />
+
+                        <TextView
+                            android:id="@+id/tv_sensors_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_xxs"
+                            android:fontFamily="sans-serif"
+                            android:text="@string/section_sensors_subtitle"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="@dimen/text_size_xs" />
+
+                        <!-- Sensors 2-Column Grid -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rv_sensors"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_sm"
+                            android:nestedScrollingEnabled="false"
+                            tools:itemCount="2"
+                            tools:listitem="@layout/item_sensor_card" />
+
+                        <!-- 5. "Last Reading" Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_last_reading"
+                            style="@style/Widget.Cogxar.Card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="@dimen/spacing_md">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/card_last_reading_title"
+                                    android:textAllCaps="true"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                                <TextView
+                                    android:id="@+id/tv_last_reading_timestamp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="@dimen/spacing_xs"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="@dimen/text_size_subtitle"
+                                    tools:text="Oct 14, 2026, 10:21 AM" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- 6. "Device Status" Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_device_status"
+                            style="@style/Widget.Cogxar.Card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="@dimen/spacing_md">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/card_device_status_title"
+                                    android:textAllCaps="true"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="@dimen/spacing_xs"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <!-- Status Dot (Color) -->
+                                    <View
+                                        android:id="@+id/view_status_dot"
+                                        android:layout_width="@dimen/status_dot_size"
+                                        android:layout_height="@dimen/status_dot_size"
+                                        android:background="@drawable/bg_status_dot_green" />
+
+                                    <!-- Status Text (Never color alone) -->
+                                    <TextView
+                                        android:id="@+id/tv_device_status"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="@dimen/spacing_sm"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:textColor="@color/status_green"
+                                        android:textSize="@dimen/text_size_subtitle"
+                                        android:textStyle="bold"
+                                        tools:text="Running" />
+
+                                    <!-- Live Updating Relative Time ("Last seen: 1 min ago") -->
+                                    <TextView
+                                        android:id="@+id/tv_device_last_seen"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="@dimen/spacing_md"
+                                        android:layout_weight="1"
+                                        android:fontFamily="sans-serif"
+                                        android:gravity="end"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="@dimen/text_size_xs"
+                                        tools:text="Last seen: 1 min ago" />
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- 7. "Latest Flagged Event" Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_flagged_event"
+                            style="@style/Widget.Cogxar.Card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing_md">
+
+                            <LinearLayout
+                                android:id="@+id/ll_flagged_event_content"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="@dimen/spacing_md">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/card_flagged_event_title"
+                                    android:textAllCaps="true"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="@dimen/text_size_xs" />
+
+                                <!-- Container when anomaly flagged -->
+                                <LinearLayout
+                                    android:id="@+id/ll_anomaly_details"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="@dimen/spacing_xs"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:id="@+id/iv_flag_icon"
+                                        android:layout_width="@dimen/icon_size_md"
+                                        android:layout_height="@dimen/icon_size_md"
+                                        android:contentDescription="@string/cd_anomaly_icon"
+                                        android:src="@drawable/ic_warning_triangle"
+                                        app:tint="@color/status_red" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="@dimen/spacing_sm"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/tv_flag_message"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:fontFamily="sans-serif-medium"
+                                            android:textColor="@color/status_red"
+                                            android:textSize="@dimen/text_size_body"
+                                            android:textStyle="bold"
+                                            tools:text="Abnormal vibration" />
+
+                                        <TextView
+                                            android:id="@+id/tv_flag_sensor"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="@dimen/spacing_xxs"
+                                            android:textColor="@color/text_secondary"
+                                            android:textSize="@dimen/text_size_xs"
+                                            tools:text="Sensor: Vibration Sensor" />
+
+                                        <TextView
+                                            android:id="@+id/tv_flag_timestamp"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:textColor="@color/text_muted"
+                                            android:textSize="@dimen/text_size_xs"
+                                            tools:text="Oct 14, 2026, 10:20 AM" />
+                                    </LinearLayout>
+
+                                </LinearLayout>
+
+                                <!-- Container when NO anomaly flagged -->
+                                <LinearLayout
+                                    android:id="@+id/ll_no_anomaly"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="@dimen/spacing_xs"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:visibility="gone"
+                                    tools:visibility="visible">
+
+                                    <ImageView
+                                        android:layout_width="@dimen/icon_size_md"
+                                        android:layout_height="@dimen/icon_size_md"
+                                        android:contentDescription="@string/no_anomalies_flagged"
+                                        android:src="@drawable/ic_check_circle"
+                                        app:tint="@color/status_green" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="@dimen/spacing_sm"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="@string/no_anomalies_flagged"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="@dimen/text_size_body" />
+                                </LinearLayout>
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+                </androidx.core.widget.NestedScrollView>
+
+                <!-- Shimmer Loading Container -->
+                <com.facebook.shimmer.ShimmerFrameLayout
+                    android:id="@+id/shimmer_view_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    app:shimmer_auto_start="false"
+                    app:shimmer_base_color="@color/shimmer_base"
+                    app:shimmer_highlight_color="@color/shimmer_highlight">
+
+                    <include layout="@layout/layout_skeleton_dashboard" />
+
+                </com.facebook.shimmer.ShimmerFrameLayout>
+
+                <!-- Empty State Layout -->
+                <LinearLayout
+                    android:id="@+id/layout_empty_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_xl"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:alpha="0.6"
+                        android:contentDescription="@string/empty_title"
+                        android:src="@drawable/ic_waveform"
+                        app:tint="@color/text_muted" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_md"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/empty_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/text_size_title" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:gravity="center"
+                        android:text="@string/empty_message"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="@dimen/text_size_body" />
+
+                </LinearLayout>
+
+                <!-- Error State Layout (with Retry) -->
+                <include
+                    android:id="@+id/layout_error_state"
+                    layout="@layout/layout_error_state" />
+
+            </FrameLayout>
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

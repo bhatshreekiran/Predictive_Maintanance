@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">cogxar</string>
+    <string name="app_subtitle">Predictive Maintenance Monitor</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_history">History</string>
+    <string name="nav_trends">Trends</string>
+
+    <!-- Dashboard Sections -->
+    <string name="section_machines">Machines</string>
+    <string name="section_sensors_title">Sensors</string>
+    <string name="section_sensors_subtitle">All sensors tied to the selected machine</string>
+    <string name="card_last_reading_title">Last Reading</string>
+    <string name="card_device_status_title">Device Status</string>
+    <string name="card_flagged_event_title">Latest Flagged Event</string>
+
+    <!-- Statuses -->
+    <string name="status_running">Running</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="last_seen_prefix">Last seen: %1$s</string>
+    <string name="last_seen_just_now">just now</string>
+    <string name="last_seen_min_ago">%1$d min ago</string>
+    <string name="last_seen_mins_ago">%1$d mins ago</string>
+    <string name="last_seen_hr_ago">%1$d hr ago</string>
+    <string name="last_seen_hrs_ago">%1$d hrs ago</string>
+    <string name="last_seen_days_ago">%1$d days ago</string>
+
+    <!-- Flags -->
+    <string name="no_anomalies_flagged">No anomalies flagged</string>
+    <string name="anomaly_sensor_label">Sensor: %1$s</string>
+
+    <!-- Banners & Connection Indicators -->
+    <string name="banner_device_offline">Device is currently offline (Last seen: %1$s)</string>
+    <string name="banner_stale_data">Data may be outdated (Last updated %1$s)</string>
+    <string name="connection_connected">Connected</string>
+    <string name="connection_reconnecting">Reconnecting…</string>
+    <string name="connection_unreachable">Server unreachable</string>
+
+    <!-- Empty and Error States -->
+    <string name="empty_title">No Sensor Data</string>
+    <string name="empty_message">There are currently no sensor readings logged for this machine.</string>
+    <string name="error_title">Data Retrieval Failed</string>
+    <string name="error_default_message">Unable to communicate with the monitoring service. Please check network connection.</string>
+    <string name="btn_retry">Retry</string>
+
+    <!-- History Placeholder -->
+    <string name="history_title">History &amp; Trends</string>
+    <string name="history_coming_soon">Historical Analytics Coming Soon</string>
+    <string name="history_subtitle">Sensor trend graphs (1h / 24h / 7d), pagination, tabular logs, and anomaly markers are scheduled for Phase 2.</string>
+
+    <!-- Content Descriptions for Accessibility -->
+    <string name="cd_app_logo">cogxar application logo</string>
+    <string name="cd_machine_selector">Select industrial machine</string>
+    <string name="cd_sensor_icon">Sensor icon</string>
+    <string name="cd_status_dot">Device status indicator</string>
+    <string name="cd_anomaly_icon">Anomaly alert indicator</string>
+    <string name="cd_refresh">Refresh dashboard</string>
+    <string name="cd_debug_settings">Debug mock settings</string>
+
+    <!-- Phase 2 History Strings -->
+    <string name="history_screen_title">Historical Telemetry</string>
+    <string name="range_1h">1h</string>
+    <string name="range_24h">24h</string>
+    <string name="range_7d">7d</string>
+    <string name="history_section_trends">Telemetry Trends</string>
+    <string name="history_section_trends_sub">Continuous sensor trend &amp; anomaly tracking</string>
+    <string name="history_temp_chart_title">Temperature (°C)</string>
+    <string name="history_vib_chart_title">Vibration RMS (mm/s)</string>
+    <string name="history_table_title">Readings Log</string>
+    <string name="history_col_time">TIME</string>
+    <string name="history_col_temp">TEMP</string>
+    <string name="history_col_vib">VIB</string>
+    <string name="history_col_flag">FLAG</string>
+    <string name="history_flag_anomaly">ANOMALY</string>
+    <string name="history_flag_normal">NORMAL</string>
+    <string name="history_btn_show_more">Show More</string>
+    <string name="history_empty_range">No readings in this range</string>
+    <string name="cd_range_selector">Select telemetry time window</string>
+    <string name="cd_history_chart_temp">Temperature trend line chart</string>
+    <string name="cd_history_chart_vib">Vibration trend line chart</string>
+    <string name="cd_history_table">Historical sensor readings table</string>
+    <string name="range_1_hour">1 hour</string>
+    <string name="range_1_day">1 day</string>
+    <string name="range_7_days">7 days</string>
+    <string name="history_btn_export">Export</string>
+    <string name="history_export_unavailable">Export will be available once the server is connected.</string>
+    <string name="cd_history_export">Export historical readings</string>
+    <string name="trends_title">Trends</string>
+    <string name="trends_subtitle">Sensor telemetry graphs &amp; trend analytics will appear here.</string>
+</resources>

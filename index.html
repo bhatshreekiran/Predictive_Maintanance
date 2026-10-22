@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Predictive Maintenance Monitor</title>
+  <meta name="description" content="Real-time industrial equipment monitoring. Live sensor charts, anomaly flags, reliable IndexedDB logging, WebSocket bridge support for RP2040+CH9120." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════════ */
+    :root {
+      --bg-base:      #0d1117;
+      --bg-card:      #161b22;
+      --bg-panel:     #1c2128;
+      --bg-input:     #21262d;
+      --border:       #30363d;
+      --border-sub:   #21262d;
+      --accent:       #58a6ff;
+      --accent-dim:   rgba(88,166,255,.12);
+      --green:        #3fb950;
+      --green-dim:    rgba(63,185,80,.15);
+      --red:          #f85149;
+      --red-dim:      rgba(248,81,73,.15);
+      --amber:        #d29922;
+      --amber-dim:    rgba(210,153,34,.15);
+      --text-1:       #e6edf3;
+      --text-2:       #c9d1d9;
+      --text-m:       #8b949e;
+      --shadow-sm:    0 1px 4px rgba(0,0,0,.4);
+      --shadow:       0 4px 16px rgba(0,0,0,.5);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,.6);
+      --r-sm: 6px; --r: 10px; --r-lg: 16px;
+      --tr: .18s ease;
+    }
+    [data-theme="light"] {
+      --bg-base:    #f4f6f9;
+      --bg-card:    #ffffff;
+      --bg-panel:   #eef1f5;
+      --bg-input:   #f6f8fa;
+      --border:     #d0d7de;
+      --border-sub: #eaeef2;
+      --accent:     #0969da;
+      --accent-dim: rgba(9,105,218,.1);
+      --green:      #1a7f37;
+      --green-dim:  rgba(26,127,55,.1);
+      --red:        #cf222e;
+      --red-dim:    rgba(207,34,46,.1);
+      --amber:      #9a6700;
+      --amber-dim:  rgba(154,103,0,.1);
+      --text-1:     #1f2328;
+      --text-2:     #24292f;
+      --text-m:     #656d76;
+      --shadow-sm:  0 1px 4px rgba(0,0,0,.08);
+      --shadow:     0 4px 16px rgba(0,0,0,.12);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,.15);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════════ */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{
+      font-family:'Inter',system-ui,-apple-system,sans-serif;
+      background:var(--bg-base);color:var(--text-1);
+      line-height:1.5;min-height:100vh;overflow-x:hidden;
+      transition:background var(--tr),color var(--tr);
+    }
+    a{color:var(--accent);text-decoration:none}
+    button,select,input,textarea{font-family:inherit}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    ::-webkit-scrollbar-thumb:hover{background:var(--text-m)}
+
+    /* ═══════════════════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════════════════ */
+    .app-header{
+      background:var(--bg-card);border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);
+    }
+    .header-inner{
+      display:flex;align-items:center;gap:10px;
+      padding:9px 16px;flex-wrap:wrap;
+    }
+    .logo{display:flex;align-items:center;gap:9px;white-space:nowrap}
+    .logo-icon{
+      width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#a371f7);
+      border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
+      font-size:17px;flex-shrink:0;box-shadow:0 2px 8px rgba(88,166,255,.3);
+    }
+    .logo-title{font-size:.88rem;font-weight:700;color:var(--text-1)}
+    .logo-sub{font-size:.62rem;font-weight:400;color:var(--text-m);
+      text-transform:uppercase;letter-spacing:.06em}
+    .header-mid{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+    .device-select{
+      background:var(--bg-input);border:1px solid var(--border);color:var(--text-1);
+      border-radius:var(--r-sm);padding:6px 10px;font-size:.82rem;font-weight:500;
+      cursor:pointer;min-height:36px;outline:none;
+      transition:border-color var(--tr);
+    }
+    .device-select:focus{border-color:var(--accent)}
+    .status-badge{
+      display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+      border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.05em;
+      text-transform:uppercase;white-space:nowrap;transition:all var(--tr);
+    }
+    .status-badge.online{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+    .status-badge.offline{background:var(--red-dim);color:var(--red);border:1px solid var(--red)}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+    .status-badge.online .status-dot{animation:pulse-dot 1.6s ease-in-out infinite}
+    @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+    .header-actions{display:flex;align-items:center;gap:6px;margin-left:auto}
+    .btn-icon{
+      width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);
+      background:var(--bg-input);color:var(--text-2);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;font-size:15px;
+      transition:all var(--tr);flex-shrink:0;
+    }
+    .btn-icon:hover{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+
+    /* ═══════════════════════════════════════════════════════════
+       STAT BAR
+    ═══════════════════════════════════════════════════════════ */
+    .stat-bar{
+      background:var(--bg-panel);border-bottom:1px solid var(--border);
+      padding:7px 16px;overflow-x:auto;
+    }
+    .stat-bar-inner{display:flex;gap:24px;align-items:center;min-width:max-content}
+    .stat-item{display:flex;flex-direction:column;gap:1px}
+    .stat-lbl{
+      font-size:.62rem;font-weight:700;text-transform:uppercase;
+      letter-spacing:.07em;color:var(--text-m);
+    }
+    .stat-val{
+      font-size:.88rem;font-weight:600;color:var(--text-1);
+      font-variant-numeric:tabular-nums;
+    }
+    .stat-val.mono{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+    .divider{width:1px;height:28px;background:var(--border);flex-shrink:0}
+
+    /* ═══════════════════════════════════════════════════════════
+       MAIN LAYOUT
+    ═══════════════════════════════════════════════════════════ */
+    .main-content{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+
+    /* ═══════════════════════════════════════════════════════════
+       QUEUE BADGE
+    ═══════════════════════════════════════════════════════════ */
+    .queue-badge{
+      display:none;align-items:center;gap:10px;padding:9px 14px;
+      background:var(--amber-dim);border:1px solid var(--amber);
+      border-radius:var(--r);font-size:.82rem;color:var(--amber);font-weight:500;
+    }
+    .queue-badge.vis{display:flex}
+    .queue-hint{font-size:.72rem;color:var(--text-m)}
+
+    /* ═══════════════════════════════════════════════════════════
+       SECTION TITLE
+    ═══════════════════════════════════════════════════════════ */
+    .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .sec-title{
+      font-size:.72rem;font-weight:700;text-transform:uppercase;
+      letter-spacing:.08em;color:var(--text-m);display:flex;align-items:center;gap:5px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       GAUGE CARDS
+    ═══════════════════════════════════════════════════════════ */
+    .gauge-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .gauge-card{
+      background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--r);
+      padding:14px 16px;display:flex;align-items:center;gap:14px;
+      min-height:88px;transition:border-color var(--tr),box-shadow var(--tr);
+    }
+    .gauge-card.anom{
+      border-color:var(--red);
+      animation:pulse-card 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-card{
+      0%,100%{box-shadow:0 0 0 0 rgba(248,81,73,0)}
+      50%{box-shadow:0 0 0 7px rgba(248,81,73,.18)}
+    }
+    .gauge-ring{
+      width:60px;height:60px;border-radius:50%;border:4px solid var(--green);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;font-size:22px;transition:border-color var(--tr);
+    }
+    .gauge-card.anom .gauge-ring{border-color:var(--red)}
+    .gauge-info{flex:1;min-width:0}
+    .gauge-lbl{
+      font-size:.68rem;font-weight:700;text-transform:uppercase;
+      letter-spacing:.06em;color:var(--text-m);margin-bottom:1px;
+    }
+    .gauge-val{
+      font-size:1.65rem;font-weight:700;font-variant-numeric:tabular-nums;
+      line-height:1.1;color:var(--green);transition:color var(--tr);
+    }
+    .gauge-card.anom .gauge-val{color:var(--red)}
+    .gauge-unit{font-size:.72rem;font-weight:500;color:var(--text-m)}
+    .gauge-meta{font-size:.68rem;color:var(--text-m);margin-top:3px;font-variant-numeric:tabular-nums}
+
+    /* ═══════════════════════════════════════════════════════════
+       CHART GRID
+    ═══════════════════════════════════════════════════════════ */
+    .chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .chart-card{
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:var(--r);padding:12px 14px;
+    }
+    .chart-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .chart-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-m)}
+    .chart-cur{
+      font-size:.82rem;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-2);
+    }
+    .chart-wrap{height:130px;position:relative}
+
+    /* ═══════════════════════════════════════════════════════════
+       ALERTS PANEL
+    ═══════════════════════════════════════════════════════════ */
+    .alerts-panel{
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:var(--r);padding:12px 14px;
+    }
+    .alerts-list{
+      max-height:180px;overflow-y:auto;display:flex;
+      flex-direction:column;gap:3px;margin-top:8px;
+    }
+    .alert-item{
+      display:flex;align-items:flex-start;gap:8px;padding:7px 10px;
+      background:var(--red-dim);border:1px solid rgba(248,81,73,.25);
+      border-radius:var(--r-sm);font-size:.76rem;
+      animation:slide-in .2s ease;
+    }
+    @keyframes slide-in{from{transform:translateX(-6px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .a-time{font-family:'JetBrains Mono',monospace;color:var(--text-m);white-space:nowrap;font-size:.7rem}
+    .a-dev{font-weight:700;color:var(--red);white-space:nowrap}
+    .a-reason{color:var(--text-2);word-break:break-all}
+    .alerts-empty{text-align:center;color:var(--text-m);padding:20px;font-size:.82rem}
+
+    /* ═══════════════════════════════════════════════════════════
+       SOURCE TABS
+    ═══════════════════════════════════════════════════════════ */
+    .source-section{
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:var(--r);overflow:hidden;
+    }
+    .tab-nav{
+      display:flex;border-bottom:1px solid var(--border);
+      overflow-x:auto;scrollbar-width:none;
+    }
+    .tab-nav::-webkit-scrollbar{display:none}
+    .tab-btn{
+      padding:10px 15px;font-size:.78rem;font-weight:600;color:var(--text-m);
+      background:transparent;border:none;cursor:pointer;white-space:nowrap;
+      border-bottom:2px solid transparent;transition:all var(--tr);min-height:44px;
+    }
+    .tab-btn:hover{color:var(--text-2);background:var(--bg-panel)}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .tab-panel{display:none;padding:14px}
+    .tab-panel.active{display:block}
+
+    /* ═══════════════════════════════════════════════════════════
+       CONTROLS
+    ═══════════════════════════════════════════════════════════ */
+    .ctrl-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}
+    .ctrl-grp{display:flex;flex-direction:column;gap:3px;min-width:110px}
+    .ctrl-lbl{
+      font-size:.68rem;font-weight:700;color:var(--text-m);
+      text-transform:uppercase;letter-spacing:.05em;
+    }
+    .slider-wrap{display:flex;align-items:center;gap:7px}
+    input[type=range]{
+      -webkit-appearance:none;width:100%;height:4px;
+      background:var(--bg-input);border-radius:2px;outline:none;cursor:pointer;
+    }
+    input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+      background:var(--accent);cursor:pointer;transition:transform .1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+    .slider-val{
+      font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:500;
+      color:var(--text-2);min-width:48px;text-align:right;
+    }
+
+    /* Buttons */
+    .btn{
+      padding:7px 14px;border-radius:var(--r-sm);border:1px solid transparent;
+      font-size:.8rem;font-weight:600;cursor:pointer;transition:all var(--tr);
+      display:inline-flex;align-items:center;gap:5px;min-height:36px;white-space:nowrap;
+    }
+    .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn-primary:hover{opacity:.85}
+    .btn-sec{background:var(--bg-input);border-color:var(--border);color:var(--text-2)}
+    .btn-sec:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-danger{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+    .btn-danger:hover{background:var(--red);color:#fff}
+    .btn-success{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+    .btn-success:hover{background:var(--green);color:#fff}
+    .btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+
+    /* Toggle switch */
+    .tog{
+      position:relative;display:inline-flex;align-items:center;gap:7px;
+      cursor:pointer;font-size:.8rem;font-weight:500;user-select:none;
+    }
+    .tog input{position:absolute;opacity:0;width:0;height:0}
+    .tog-track{
+      width:38px;height:21px;background:var(--bg-input);border:1px solid var(--border);
+      border-radius:11px;position:relative;transition:all var(--tr);flex-shrink:0;
+    }
+    .tog-thumb{
+      position:absolute;top:2px;left:2px;width:15px;height:15px;
+      border-radius:50%;background:var(--text-m);transition:all var(--tr);
+    }
+    .tog input:checked~.tog-track{background:var(--accent-dim);border-color:var(--accent)}
+    .tog input:checked~.tog-track .tog-thumb{left:19px;background:var(--accent)}
+
+    /* Input */
+    .inp{
+      background:var(--bg-input);border:1px solid var(--border);color:var(--text-1);
+      border-radius:var(--r-sm);padding:6px 9px;font-size:.82rem;outline:none;
+      transition:border-color var(--tr);min-height:36px;
+    }
+    .inp:focus{border-color:var(--accent)}
+
+    /* Banners */
+    .banner{
+      padding:9px 12px;border-radius:var(--r-sm);font-size:.8rem;font-weight:500;
+      display:flex;align-items:flex-start;gap:7px;margin-bottom:10px;
+    }
+    .banner-warn{background:var(--amber-dim);border:1px solid rgba(210,153,34,.4);color:var(--amber)}
+    .banner-info{background:var(--accent-dim);border:1px solid rgba(88,166,255,.3);color:var(--accent)}
+
+    /* Drop zone */
+    .drop-zone{
+      border:2px dashed var(--border);border-radius:var(--r);padding:28px;
+      text-align:center;cursor:pointer;transition:all var(--tr);
+      color:var(--text-m);font-size:.82rem;position:relative;
+    }
+    .drop-zone:hover,.drop-zone.drag-over{
+      border-color:var(--accent);background:var(--accent-dim);color:var(--accent);
+    }
+    .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+    /* Progress bar */
+    .prog-wrap{background:var(--bg-input);border-radius:3px;height:5px;overflow:hidden;margin:7px 0}
+    .prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .1s;width:0%}
+
+    /* WS state chips */
+    .ws-state{font-weight:600}
+    .ws-state.connecting{color:var(--amber)}
+    .ws-state.open{color:var(--green)}
+    .ws-state.closed{color:var(--text-m)}
+    .ws-state.error{color:var(--red)}
+
+    /* ═══════════════════════════════════════════════════════════
+       LOG TABLE
+    ═══════════════════════════════════════════════════════════ */
+    .log-section{
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:var(--r);overflow:hidden;
+    }
+    .log-toolbar{
+      padding:10px 12px;border-bottom:1px solid var(--border);
+      display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    }
+    .search-inp{flex:1;min-width:140px}
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.76rem}
+    thead th{
+      padding:7px 9px;text-align:left;font-size:.65rem;font-weight:700;
+      text-transform:uppercase;letter-spacing:.06em;color:var(--text-m);
+      background:var(--bg-panel);border-bottom:1px solid var(--border);white-space:nowrap;
+    }
+    tbody tr{border-bottom:1px solid var(--border-sub);transition:background var(--tr)}
+    tbody tr:hover{background:var(--bg-panel)}
+    tbody tr.anom-row{background:var(--red-dim)}
+    tbody tr.anom-row:hover{background:rgba(248,81,73,.22)}
+    tbody tr.gap-row{background:var(--amber-dim)}
+    td{padding:6px 9px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text-2)}
+    td.mono{font-family:'JetBrains Mono',monospace;font-size:.72rem}
+    .anom-chip{
+      display:inline-flex;align-items:center;gap:3px;padding:2px 6px;
+      border-radius:10px;font-size:.68rem;font-weight:700;
+    }
+    .anom-chip.yes{background:var(--red-dim);color:var(--red);border:1px solid var(--red)}
+    .anom-chip.no{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+    .gap-cell{color:var(--amber);font-size:.73rem;font-style:italic;padding:5px 9px}
+    .log-pager{
+      padding:9px 12px;border-top:1px solid var(--border);
+      display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--text-m);
+    }
+    .log-actions{
+      padding:10px 12px;border-top:1px solid var(--border);
+      display:flex;gap:7px;flex-wrap:wrap;align-items:center;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SETTINGS DRAWER
+    ═══════════════════════════════════════════════════════════ */
+    .drawer-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+      opacity:0;pointer-events:none;transition:opacity var(--tr);
+    }
+    .drawer-overlay.open{opacity:1;pointer-events:all}
+    .drawer{
+      position:fixed;top:0;right:0;width:min(340px,100vw);height:100vh;
+      background:var(--bg-card);border-left:1px solid var(--border);
+      padding:20px;z-index:201;transform:translateX(100%);
+      transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;
+    }
+    .drawer.open{transform:translateX(0)}
+    .drawer-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+    .drawer-title{font-size:.95rem;font-weight:700}
+    .set-row{margin-bottom:18px}
+    .set-row label{display:block;font-size:.8rem;font-weight:600;color:var(--text-2);margin-bottom:5px}
+    .set-hint{font-size:.7rem;color:var(--text-m);margin-top:3px}
+
+    /* ═══════════════════════════════════════════════════════════
+       QR / SHARE MODAL
+    ═══════════════════════════════════════════════════════════ */
+    .modal-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;
+      display:flex;align-items:center;justify-content:center;padding:16px;
+      opacity:0;pointer-events:none;transition:opacity var(--tr);
+    }
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);
+      padding:22px;max-width:380px;width:100%;box-shadow:var(--shadow-lg);
+      transform:scale(.95);transition:transform var(--tr);
+    }
+    .modal-overlay.open .modal{transform:scale(1)}
+    .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .qr-wrap{display:flex;justify-content:center;margin:14px 0;background:#fff;padding:12px;border-radius:var(--r-sm)}
+    .share-url{
+      background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-sm);
+      padding:7px 10px;font-size:.72rem;font-family:'JetBrains Mono',monospace;
+      word-break:break-all;color:var(--text-m);margin-bottom:10px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       DEMO GUIDE
+    ═══════════════════════════════════════════════════════════ */
+    .demo-guide{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+    }
+    .demo-hdr{
+      padding:12px 14px;display:flex;justify-content:space-between;
+      align-items:center;cursor:pointer;user-select:none;
+    }
+    .demo-hdr:hover{background:var(--bg-panel)}
+    .demo-body{padding:0 14px 14px;display:none}
+    .demo-body.open{display:block}
+    .demo-step{
+      display:flex;gap:10px;padding:9px 0;
+      border-bottom:1px solid var(--border-sub);
+    }
+    .demo-step:last-child{border-bottom:none}
+    .demo-num{
+      width:26px;height:26px;border-radius:50%;background:var(--accent-dim);color:var(--accent);
+      font-size:.76rem;font-weight:700;display:flex;align-items:center;
+      justify-content:center;flex-shrink:0;
+    }
+    .demo-txt{font-size:.8rem;color:var(--text-2)}
+    .demo-txt strong{color:var(--text-1)}
+    code{
+      background:var(--bg-input);padding:1px 5px;border-radius:3px;
+      font-family:'JetBrains Mono',monospace;font-size:.85em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       PRINT STYLES
+    ═══════════════════════════════════════════════════════════ */
+    @media print{
+      .app-header,.stat-bar,.source-section,.log-section,
+      .demo-guide,.header-actions,.drawer,.modal-overlay,
+      footer,.queue-badge,.log-actions,.log-toolbar{display:none!important}
+      body{background:#fff;color:#000}
+      .gauge-card,.chart-card,.alerts-panel{border:1px solid #ccc;box-shadow:none}
+      #print-section{display:block!important}
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE — Mobile-first
+    ═══════════════════════════════════════════════════════════ */
+    @media(max-width:640px){
+      .gauge-row{grid-template-columns:1fr}
+      .chart-grid{grid-template-columns:1fr}
+      .logo-sub,.logo-title{display:none}
+      .gauge-val{font-size:1.3rem}
+      .main-content{padding:10px 10px}
+    }
+    @media(min-width:641px) and (max-width:1023px){
+      .gauge-row{grid-template-columns:repeat(3,1fr)}
+      .chart-grid{grid-template-columns:1fr}
+    }
+    @media(min-width:1024px){
+      .chart-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MISC UTILITIES
+    ═══════════════════════════════════════════════════════════ */
+    .mono{font-family:'JetBrains Mono',monospace}
+    .fade{animation:fade .25s ease}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+  </style>
+</head>
+<body data-theme="dark">
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚙</div>
+      <div>
+        <div class="logo-title">PMM</div>
+        <div class="logo-sub">Predictive Maintenance</div>
+      </div>
+    </div>
+
+    <div class="header-mid">
+      <select id="device-select" class="device-select inp" aria-label="Active device">
+        <option value="">— No device yet —</option>
+      </select>
+      <span id="status-badge" class="status-badge offline" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="status-text">OFFLINE</span>
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-icon" id="btn-theme"    title="Toggle theme"    aria-label="Toggle theme">🌙</button>
+      <button class="btn-icon" id="btn-settings" title="Settings"        aria-label="Open settings">⚙️</button>
+      <button class="btn-icon" id="btn-share"    title="Share / QR code" aria-label="Share">🔗</button>
+      <button class="btn-icon" id="btn-print"    title="Print report"    aria-label="Print report">🖨️</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════ STAT BAR ══════════════════ -->
+<div class="stat-bar" role="status" aria-label="Device statistics">
+  <div class="stat-bar-inner">
+    <div class="stat-item">
+      <div class="stat-lbl">Status</div>
+      <div class="stat-val" id="stat-status">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat-item">
+      <div class="stat-lbl">Last seen</div>
+      <div class="stat-val mono" id="stat-last-seen">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat-item">
+      <div class="stat-lbl">Total readings</div>
+      <div class="stat-val" id="stat-total">0</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat-item">
+      <div class="stat-lbl">Anomalies</div>
+      <div class="stat-val" id="stat-anoms" style="color:var(--red)">0</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat-item">
+      <div class="stat-lbl">Packet loss</div>
+      <div class="stat-val" id="stat-loss">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat-item">
+      <div class="stat-lbl">Seq gaps</div>
+      <div class="stat-val" id="stat-gaps">0</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat-item">
+      <div class="stat-lbl">Last ACK'd</div>
+      <div class="stat-val mono" id="stat-ack">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MAIN CONTENT ══════════════════ -->
+<div class="main-content">
+
+  <!-- Queue badge (hidden unless dropped) -->
+  <div class="queue-badge" id="queue-badge" role="status">
+    📦 <strong><span id="queue-count">0</span> readings queued</strong>
+    <span class="queue-hint">(simulating device buffer — memory only, not persisted)</span>
+  </div>
+
+  <!-- ══ GAUGE ROW ══ -->
+  <div class="gauge-row" id="gauge-row">
+    <div class="gauge-card" id="gauge-vib" role="meter" aria-label="Vibration">
+      <div class="gauge-ring">📳</div>
+      <div class="gauge-info">
+        <div class="gauge-lbl">Vibration</div>
+        <div class="gauge-val" id="gv-vib">—</div>
+        <span class="gauge-unit">g</span>
+        <div class="gauge-meta" id="gm-vib">min — / max —</div>
+      </div>
+    </div>
+    <div class="gauge-card" id="gauge-temp" role="meter" aria-label="Temperature">
+      <div class="gauge-ring">🌡️</div>
+      <div class="gauge-info">
+        <div class="gauge-lbl">Temperature</div>
+        <div class="gauge-val" id="gv-temp">—</div>
+        <span class="gauge-unit">°C</span>
+        <div class="gauge-meta" id="gm-temp">min — / max —</div>
+      </div>
+    </div>
+    <div class="gauge-card" id="gauge-cur" role="meter" aria-label="Current">
+      <div class="gauge-ring">⚡</div>
+      <div class="gauge-info">
+        <div class="gauge-lbl">Current</div>
+        <div class="gauge-val" id="gv-cur">—</div>
+        <span class="gauge-unit">A</span>
+        <div class="gauge-meta" id="gm-cur">min — / max —</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CHART GRID ══ -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-hdr">
+        <span class="chart-title" style="color:#58a6ff">● Vibration (g)</span>
+        <span class="chart-cur" id="cc-vib">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-vib"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr">
+        <span class="chart-title" style="color:#f0883e">● Temperature (°C)</span>
+        <span class="chart-cur" id="cc-temp">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-temp"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr">
+        <span class="chart-title" style="color:#ffa657">● Current (A)</span>
+        <span class="chart-cur" id="cc-cur">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-cur"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ══ ALERTS PANEL ══ -->
+  <div class="alerts-panel">
+    <div class="sec-hdr">
+      <span class="sec-title">🚨 Anomaly Alerts</span>
+      <button class="btn btn-sec" id="btn-clr-alerts" style="font-size:.72rem;padding:4px 10px;min-height:28px">
+        Clear display
+      </button>
+    </div>
+    <div class="alerts-list" id="alerts-list" aria-live="polite" aria-label="Anomaly alerts">
+      <div class="alerts-empty">No anomalies detected yet.</div>
+    </div>
+  </div>
+
+  <!-- ══ SOURCE TABS ══ -->
+  <div class="source-section">
+    <div class="tab-nav" role="tablist" aria-label="Data source">
+      <button class="tab-btn active" data-tab="sim"    role="tab" aria-selected="true">🔄 Simulator</button>
+      <button class="tab-btn"        data-tab="manual" role="tab" aria-selected="false">🎛️ Manual</button>
+      <button class="tab-btn"        data-tab="replay" role="tab" aria-selected="false">⏯️ Replay</button>
+      <button class="tab-btn"        data-tab="phone"  role="tab" aria-selected="false">📱 Phone</button>
+      <button class="tab-btn"        data-tab="ws"     role="tab" aria-selected="false">🌐 WebSocket</button>
+    </div>
+
+    <!-- SIMULATOR -->
+    <div class="tab-panel active" id="tab-sim" role="tabpanel">
+      <div class="ctrl-row">
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Rate (Hz)</span>
+          <div class="slider-wrap">
+            <input type="range" id="sim-hz" min="1" max="10" value="2" step="1" aria-label="Simulator rate">
+            <span class="slider-val" id="sim-hz-v">2 Hz</span>
+          </div>
+        </div>
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Base VIB (g)</span>
+          <div class="slider-wrap">
+            <input type="range" id="sim-vib" min="0" max="5" value="0.5" step="0.1">
+            <span class="slider-val" id="sim-vib-v">0.5</span>
+          </div>
+        </div>
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Base TEMP (°C)</span>
+          <div class="slider-wrap">
+            <input type="range" id="sim-temp" min="20" max="120" value="65" step="1">
+            <span class="slider-val" id="sim-temp-v">65</span>
+          </div>
+        </div>
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Base CUR (A)</span>
+          <div class="slider-wrap">
+            <input type="range" id="sim-cur" min="0" max="10" value="3" step="0.1">
+            <span class="slider-val" id="sim-cur-v">3.0</span>
+          </div>
+        </div>
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Noise Amp</span>
+          <div class="slider-wrap">
+            <input type="range" id="sim-noise" min="0" max="1" value="0.15" step="0.05">
+            <span class="slider-val" id="sim-noise-v">0.15</span>
+          </div>
+        </div>
+      </div>
+      <div class="ctrl-row" style="align-items:center">
+        <label class="tog">
+          <input type="checkbox" id="sim-anom">
+          <span class="tog-track"><span class="tog-thumb"></span></span>
+          Force anom:1
+        </label>
+        <button class="btn btn-primary" id="btn-sim-toggle">▶ Start</button>
+        <button class="btn btn-sec"     id="btn-sim-restart">↺ New boot</button>
+        <span style="font-size:.72rem;color:var(--text-m)">
+          Boot: <span class="mono" id="sim-boot-disp">—</span>
+          &nbsp;Seq: <span class="mono" id="sim-seq-disp">0</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- MANUAL -->
+    <div class="tab-panel" id="tab-manual" role="tabpanel">
+      <div class="ctrl-row">
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Vibration (g)</span>
+          <div class="slider-wrap">
+            <input type="range" id="man-vib" min="0" max="5" value="1.0" step="0.01">
+            <span class="slider-val" id="man-vib-v">1.00</span>
+          </div>
+        </div>
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Temperature (°C)</span>
+          <div class="slider-wrap">
+            <input type="range" id="man-temp" min="20" max="120" value="60" step="0.1">
+            <span class="slider-val" id="man-temp-v">60.0</span>
+          </div>
+        </div>
+        <div class="ctrl-grp">
+          <span class="ctrl-lbl">Current (A)</span>
+          <div class="slider-wrap">
+            <input type="range" id="man-cur" min="0" max="10" value="3.0" step="0.01">
+            <span class="slider-val" id="man-cur-v">3.00</span>
+          </div>
+        </div>
+      </div>
+      <div class="ctrl-row" style="flex-wrap:wrap;align-items:center">
+        <label class="tog">
+          <input type="checkbox" id="man-anom">
+          <span class="tog-track"><span class="tog-thumb"></span></span>
+          Anomaly flag (anom:1)
+        </label>
+        <div class="ctrl-grp" style="min-width:180px;flex:1">
+          <span class="ctrl-lbl">Reason (≤16 chars)</span>
+          <input type="text" id="man-reason" class="inp" maxlength="16"
+            placeholder="e.g. VIB_HI" style="width:100%" aria-label="Reason code">
+        </div>
+        <div class="ctrl-grp" style="min-width:120px">
+          <span class="ctrl-lbl">Device ID</span>
+          <input type="text" id="man-dev-id" class="inp" value="motor01"
+            maxlength="20" style="width:100%" aria-label="Device ID">
+        </div>
+      </div>
+      <div class="ctrl-row" style="align-items:center">
+        <button class="btn btn-primary" id="btn-man-send">📤 Send Reading</button>
+        <label class="tog">
+          <input type="checkbox" id="man-auto">
+          <span class="tog-track"><span class="tog-thumb"></span></span>
+          Auto-send (1 Hz)
+        </label>
+        <span style="font-size:.72rem;color:var(--text-m)">
+          Boot: <span class="mono" id="man-boot-disp">—</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- REPLAY -->
+    <div class="tab-panel" id="tab-replay" role="tabpanel">
+      <div class="drop-zone" id="drop-zone" role="button" aria-label="Drop CSV or JSON file">
+        <input type="file" id="replay-file" accept=".csv,.json" aria-label="Choose replay file">
+        📂 Drop a CSV or JSON file here, or click to browse
+      </div>
+      <div id="replay-info" style="display:none;margin-top:10px">
+        <div style="font-size:.8rem;margin-bottom:6px">
+          <span id="replay-fname" style="color:var(--text-1);font-weight:600"></span>
+          — <span id="replay-cnt" style="color:var(--text-m)"></span> readings
+        </div>
+        <div class="prog-wrap"><div class="prog-fill" id="replay-prog"></div></div>
+        <div class="ctrl-row" style="align-items:center;margin-top:8px;flex-wrap:wrap">
+          <div class="ctrl-grp">
+            <span class="ctrl-lbl">Speed</span>
+            <select id="replay-speed" class="inp" aria-label="Replay speed">
+              <option value="1">1×</option>
+              <option value="5">5×</option>
+              <option value="10" selected>10×</option>
+            </select>
+          </div>
+          <label class="tog">
+            <input type="checkbox" id="replay-new-sess" checked>
+            <span class="tog-track"><span class="tog-thumb"></span></span>
+            New session (fresh boot)
+          </label>
+          <label class="tog">
+            <input type="checkbox" id="replay-loop">
+            <span class="tog-track"><span class="tog-thumb"></span></span>
+            Loop
+          </label>
+          <button class="btn btn-primary" id="btn-replay-play">▶ Play</button>
+          <button class="btn btn-sec"     id="btn-replay-pause" disabled>⏸ Pause</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE -->
+    <div class="tab-panel" id="tab-phone" role="tabpanel">
+      <div class="banner banner-warn">
+        ⚠️ <strong>DeviceMotion requires HTTPS.</strong>
+        Will not work on <code>file://</code> or plain <code>http://</code>.
+        Host on GitHub Pages or Netlify. On HTTPS, <code>ws://localhost</code> is allowed;
+        remote <code>ws://</code> is not — use <code>wss://</code> or a tunnel.
+      </div>
+      <p style="font-size:.8rem;color:var(--text-m);margin-bottom:12px">
+        Maps device accelerometer magnitude → VIB (gravity removed via high-pass filter α=0.8).
+        TEMP + CUR read from the Manual sliders.
+      </p>
+      <div class="ctrl-row" style="align-items:center">
+        <button class="btn btn-primary" id="btn-phone-perm">📱 Request Permission</button>
+        <button class="btn btn-sec"     id="btn-phone-start" disabled>▶ Start</button>
+        <button class="btn btn-sec"     id="btn-phone-stop"  disabled>⏹ Stop</button>
+      </div>
+      <div id="phone-status" style="font-size:.8rem;color:var(--text-m);margin-top:8px" aria-live="polite"></div>
+      <div id="phone-raw"    style="font-size:.72rem;color:var(--text-m);font-family:monospace;margin-top:4px"></div>
+    </div>
+
+    <!-- WEBSOCKET -->
+    <div class="tab-panel" id="tab-ws" role="tabpanel">
+      <div class="banner banner-warn" id="ws-warn" style="display:none">
+        🔒 HTTPS pages can only open <code>wss://</code> (not <code>ws://</code>) for non-localhost hosts.
+        Use a TLS proxy or a tunnel like ngrok/Cloudflare Tunnel.
+      </div>
+      <div class="ctrl-row" style="align-items:flex-end">
+        <div class="ctrl-grp" style="flex:1;min-width:180px">
+          <span class="ctrl-lbl">WebSocket URL</span>
+          <input type="text" id="ws-url" class="inp" value="ws://localhost:8765"
+            style="width:100%" aria-label="WebSocket URL">
+        </div>
+        <button class="btn btn-primary" id="btn-ws-connect">Connect</button>
+        <button class="btn btn-danger"  id="btn-ws-disc"    disabled>Disconnect</button>
+      </div>
+      <div style="display:flex;gap:20px;font-size:.78rem;margin-top:8px;flex-wrap:wrap;color:var(--text-m)">
+        <span>State: <span id="ws-state-chip" class="ws-state closed">CLOSED</span></span>
+        <span>Msgs/s: <span id="ws-rate">—</span></span>
+        <span>Bytes: <span id="ws-bytes">0 B</span></span>
+        <span>Last ACK: <span id="ws-ack-disp" class="mono" style="color:var(--text-2)">—</span></span>
+      </div>
+    </div>
+  </div><!-- end source-section -->
+
+  <!-- ══ LOG SECTION ══ -->
+  <div class="log-section">
+    <div class="log-toolbar">
+      <span class="sec-title" style="margin-bottom:0">📋 Raw Log</span>
+      <input type="search" id="log-search" class="inp search-inp"
+        placeholder="Search log…" aria-label="Search log">
+      <label class="tog" style="font-size:.76rem">
+        <input type="checkbox" id="log-anom-only">
+        <span class="tog-track"><span class="tog-thumb"></span></span>
+        Anomalies only
+      </label>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Boot (hex)</th>
+            <th>Seq</th>
+            <th>Device</th>
+            <th>rx_ts</th>
+            <th>ts (dev)</th>
+            <th>Vib (g)</th>
+            <th>Temp (°C)</th>
+            <th>Cur (A)</th>
+            <th>Anom</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody id="log-tbody">
+          <tr>
+            <td colspan="10" style="text-align:center;padding:28px;color:var(--text-m)">
+              No data yet. Start the Simulator to begin.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="log-pager">
+      <button class="btn btn-sec" id="btn-prev" style="padding:4px 11px;min-height:30px">‹ Prev</button>
+      <span id="page-info" style="flex:1;text-align:center">—</span>
+      <button class="btn btn-sec" id="btn-next" style="padding:4px 11px;min-height:30px">Next ›</button>
+    </div>
+
+    <div class="log-actions">
+      <button class="btn btn-sec"     id="btn-exp-csv">⬇ CSV</button>
+      <button class="btn btn-sec"     id="btn-exp-json">⬇ JSON</button>
+      <button class="btn btn-sec"     id="btn-drop">📵 Drop Conn</button>
+      <button class="btn btn-success" id="btn-reconnect" disabled>🔄 Reconnect</button>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-danger" id="btn-clr-dev">🗑 Clear Device</button>
+        <button class="btn btn-danger" id="btn-clr-all">🗑 Clear All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DEMO GUIDE ══ -->
+  <div class="demo-guide">
+    <div class="demo-hdr" id="demo-toggle" role="button" aria-expanded="false" tabindex="0">
+      <span class="sec-title">📖 Demo Guide</span>
+      <span id="demo-chevron" style="color:var(--text-m)">▼</span>
+    </div>
+    <div class="demo-body" id="demo-body">
+      <div class="demo-step">
+        <div class="demo-num">①</div>
+        <div class="demo-txt">
+          <strong>Simulator</strong> — Click ▶ Start. Watch VIB / TEMP / CUR charts scroll live.
+        </div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-num">②</div>
+        <div class="demo-txt">
+          <strong>Anomaly flag</strong> — Toggle "Force anom:1". All gauges turn red,
+          alerts fill, chart points appear red. Toggle off to return to green.
+        </div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-num">③</div>
+        <div class="demo-txt">
+          <strong>Manual</strong> — Switch to Manual tab. Set sliders, enable Anomaly flag,
+          type a reason code (e.g. <code>VIB_HI</code>), click Send Reading.
+        </div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-num">④</div>
+        <div class="demo-txt">
+          <strong>Drop &amp; Reconnect</strong> — Click 📵 Drop Conn. Keep simulator running ~10 s.
+          Watch queue badge count up. Click 🔄 Reconnect — all readings flush in order
+          with correct timestamps (not bunched).
+        </div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-num">⑤</div>
+        <div class="demo-txt">
+          <strong>Replay</strong> — Export a CSV, drag it into Replay tab.
+          Enable "New session", set 10×, click Play.
+        </div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-num">⑥</div>
+        <div class="demo-txt">
+          <strong>WebSocket</strong> — Run <code>python bridge.py</code> +
+          <code>python fake_device.py</code>. Enter <code>ws://localhost:8765</code>,
+          click Connect. Close browser, wait 30 s, reopen — all readings load from bridge JSONL.
+        </div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-num">⑦</div>
+        <div class="demo-txt">
+          <strong>Share &amp; Export</strong> — Click 🔗 for QR code + URL.
+          Click 🖨️ for a printable report. Export CSV / JSON for offline analysis.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .main-content -->
+
+<footer style="text-align:center;padding:18px;font-size:.7rem;color:var(--text-m);
+  border-top:1px solid var(--border);margin-top:4px">
+  PMM v1.0 · Built Oct 2026
+  <span id="file-warn" style="display:none;color:var(--amber)">
+    · ⚠ Running from file:// — host on a web server for sharing &amp; phone features
+  </span>
+</footer>
+
+<!-- ══════════════════ SETTINGS DRAWER ══════════════════ -->
+<div class="drawer-overlay" id="set-overlay" role="presentation"></div>
+<div class="drawer" id="settings-drawer" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="drawer-hdr">
+    <span class="drawer-title">⚙️ Settings</span>
+    <button class="btn-icon" id="btn-set-close" aria-label="Close settings">✕</button>
+  </div>
+
+  <div class="set-row">
+    <label for="set-timeout">Online timeout (seconds)</label>
+    <input type="number" id="set-timeout" class="inp" min="1" max="60" value="5"
+      style="width:100%" aria-describedby="timeout-hint">
+    <div class="set-hint" id="timeout-hint">Device goes OFFLINE after this many seconds of silence.</div>
+  </div>
+
+  <div class="set-row">
+    <label for="set-win">Chart window (readings)</label>
+    <input type="number" id="set-win" class="inp" min="10" max="500" value="100"
+      style="width:100%" aria-describedby="win-hint">
+    <div class="set-hint" id="win-hint">Number of most recent readings displayed on each chart.</div>
+  </div>
+
+  <div class="set-row">
+    <label>Theme</label>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-sec" id="set-dark"  >🌙 Dark</button>
+      <button class="btn btn-sec" id="set-light" >☀️ Light</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ QR / SHARE MODAL ══════════════════ -->
+<div class="modal-overlay" id="qr-overlay" role="dialog" aria-modal="true" aria-label="Share">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span style="font-weight:700;font-size:.95rem">🔗 Share Settings</span>
+      <button class="btn-icon" id="btn-qr-close" aria-label="Close">✕</button>
+    </div>
+    <div class="qr-wrap" id="qr-wrap"></div>
+    <div class="share-url" id="share-url">—</div>
+    <div class="banner banner-info" id="file-host-note" style="display:none">
+      ℹ️ Sharing requires a hosted URL (GitHub Pages / Netlify).
+      The URL still works locally.
+    </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-sec" id="btn-copy-url">📋 Copy URL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print-only section -->
+<div id="print-section" style="display:none">
+  <h1 style="font-size:1.1rem;margin-bottom:6px">Predictive Maintenance Monitor — Report</h1>
+  <p id="print-ts"  style="font-size:.8rem;color:#666;margin-bottom:14px"></p>
+  <div id="print-charts"></div>
+  <div id="print-alerts"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ──────────────────────────────────────────────────────────
+   CONSTANTS
+────────────────────────────────────────────────────────── */
+const APP_VER   = '1.0';
+const PAGE_SIZE = 25;       // rows per log page
+const MAX_ALERTS = 200;     // max displayed alert rows
+const FIELDS    = ['vib','temp','cur'];
+const UNITS     = { vib:'g', temp:'°C', cur:'A' };
+const CHART_CLR = { vib:'#58a6ff', temp:'#f0883e', cur:'#ffa657' };
+
+/* ──────────────────────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────────────────────── */
+const toHex  = n => '0x' + (n>>>0).toString(16).toUpperCase().padStart(8,'0');
+const esc    = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                              .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const r2     = v => Math.round(v * 100) / 100;
+const clamp  = (v,lo,hi) => Math.min(hi,Math.max(lo,v));
+const el     = id => document.getElementById(id);
+
+function fmtBytes(b){
+  if(b < 1024) return b+' B';
+  if(b < 1048576) return (b/1024).toFixed(1)+' KB';
+  return (b/1048576).toFixed(2)+' MB';
+}
+function fmtSince(ms){
+  const d = Math.round((Date.now()-ms)/100)/10;
+  return d < 60 ? d.toFixed(1)+' s ago' : Math.round(d/60)+' m ago';
+}
+/* Box-Muller Gaussian */
+function gauss(){
+  let u=0,v=0;
+  while(!u) u=Math.random();
+  while(!v) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function newBoot(){ return (Math.random()*0xFFFFFFFF)>>>0; }
+
+/* ──────────────────────────────────────────────────────────
+   SETTINGS  (localStorage)
+────────────────────────────────────────────────────────── */
+const Settings = (() => {
+  const KEY = 'pmm_cfg';
+  let s = { onlineTimeout:5, chartWindow:100, theme:'dark' };
+
+  function load(){
+    try{ Object.assign(s, JSON.parse(localStorage.getItem(KEY)||'{}')); } catch(_){}
+    applyTheme(s.theme);
+    el('set-timeout').value = s.onlineTimeout;
+    el('set-win').value     = s.chartWindow;
+  }
+  function save(){ localStorage.setItem(KEY, JSON.stringify(s)); }
+  function applyTheme(t){
+    s.theme = t;
+    document.documentElement.setAttribute('data-theme', t);
+    el('btn-theme').textContent = t==='dark' ? '☀️' : '🌙';
+    save();
+  }
+  function get(){ return s; }
+  function saveFromUI(){
+    s.onlineTimeout = parseInt(el('set-timeout').value)||5;
+    s.chartWindow   = parseInt(el('set-win').value)||100;
+    save();
+  }
+  return { load, save, applyTheme, get, saveFromUI };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   DATABASE  (IndexedDB v1)
+────────────────────────────────────────────────────────── */
+const DB = (() => {
+  let db = null;
+
+  function open(){
+    return new Promise((res,rej) => {
+      const req = indexedDB.open('pmm_db', 1);
+      req.onupgradeneeded = e => {
+        const idb   = e.target.result;
+        const store = idb.createObjectStore('readings',{
+          keyPath:['id','boot','seq']   // composite — reboot-safe dedup
+        });
+        store.createIndex('by_id',    'id');      // getAllForDevice()
+        store.createIndex('by_rx_ts', 'rx_ts');   // chronological
+        store.createIndex('by_anom',  'anom');    // anomaly filter
+      };
+      req.onsuccess = e => { db=e.target.result; res(); };
+      req.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  /**
+   * Add one reading.
+   * Returns true if new, false if duplicate (ConstraintError).
+   * event.preventDefault() prevents the error from aborting the transaction.
+   */
+  function add(record){
+    return new Promise((res,rej) => {
+      const tx    = db.transaction('readings','readwrite');
+      const store = tx.objectStore('readings');
+      const req   = store.add(record);
+      req.onsuccess = ()  => res(true);
+      req.onerror   = e   => {
+        e.preventDefault();                         // don't abort tx
+        if(req.error && req.error.name==='ConstraintError') res(false);
+        else rej(req.error);
+      };
+    });
+  }
+
+  function getAllForDevice(id){
+    return new Promise((res,rej) => {
+      const tx    = db.transaction('readings','readonly');
+      const store = tx.objectStore('readings');
+      const idx   = store.index('by_id');
+      const req   = idx.getAll(IDBKeyRange.only(id));
+      req.onsuccess = () => {
+        const rows = (req.result||[]).sort((a,b)=>a.rx_ts-b.rx_ts);
+        res(rows);
+      };
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  function countForDevice(id){
+    return new Promise((res,rej) => {
+      const tx    = db.transaction('readings','readonly');
+      const store = tx.objectStore('readings');
+      const idx   = store.index('by_id');
+      const req   = idx.count(IDBKeyRange.only(id));
+      req.onsuccess = () => res(req.result);
+      req.onerror   = e  => rej(e.target.error);
+    });
+  }
+
+  async function countAnomalies(id){
+    const rows = await getAllForDevice(id);
+    return rows.filter(r=>r.anom===1).length;
+  }
+
+  /**
+   * Packet loss per (id, boot) session.
+   * loss = 1 - received / (maxSeq - minSeq + 1)
+   * DB-derived — survives refresh; handles late/resent packets.
+   */
+  async function packetLoss(id){
+    const rows = await getAllForDevice(id);
+    if(rows.length<2) return 0;
+    const byBoot = {};
+    for(const r of rows){
+      if(!byBoot[r.boot]) byBoot[r.boot]=[];
+      byBoot[r.boot].push(r.seq);
+    }
+    let exp=0,rcv=0;
+    for(const seqs of Object.values(byBoot)){
+      const mn=Math.min(...seqs), mx=Math.max(...seqs);
+      exp += mx-mn+1; rcv += seqs.length;
+    }
+    return exp>0 ? Math.max(0,(1-rcv/exp)*100) : 0;
+  }
+
+  async function getMaxRxTs(id){
+    const rows = await getAllForDevice(id);
+    if(!rows.length) return 0;
+    return Math.max(...rows.map(r=>r.rx_ts));
+  }
+
+  function getDeviceIds(){
+    return new Promise((res,rej) => {
+      const tx    = db.transaction('readings','readonly');
+      const store = tx.objectStore('readings');
+      const idx   = store.index('by_id');
+      const ids   = new Set();
+      const req   = idx.openCursor();
+      req.onsuccess = e => {
+        const cur = e.target.result;
+        if(cur){ ids.add(cur.value.id); cur.continue(); }
+        else res([...ids].sort());
+      };
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  /**
+   * Return one page of readings (+ the last row of the previous page
+   * for gap detection at page boundaries).
+   */
+  async function getPage(id, pageIdx, anomOnly, search){
+    let rows = await getAllForDevice(id);
+    if(anomOnly) rows = rows.filter(r=>r.anom===1);
+    if(search){
+      const q = search.toLowerCase();
+      rows = rows.filter(r => Object.values(r).some(v=>String(v).toLowerCase().includes(q)));
+    }
+    const total      = rows.length;
+    const totalPages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+    const pg         = Math.max(0, Math.min(pageIdx, totalPages-1));
+    const start      = pg * PAGE_SIZE;
+    const pageRows   = rows.slice(start, start+PAGE_SIZE);
+    const prevRow    = start>0 ? rows[start-1] : null;
+    return { rows:pageRows, prevRow, total, totalPages, pg };
+  }
+
+  async function clearDevice(id){
+    const rows = await getAllForDevice(id);
+    return new Promise((res,rej) => {
+      if(!rows.length){ res(); return; }
+      const tx    = db.transaction('readings','readwrite');
+      const store = tx.objectStore('readings');
+      let n = rows.length;
+      for(const r of rows){
+        const req = store.delete([r.id,r.boot,r.seq]);
+        req.onsuccess = () => { if(--n===0) res(); };
+        req.onerror   = e  => rej(e.target.error);
+      }
+    });
+  }
+
+  function clearAll(){
+    return new Promise((res,rej) => {
+      const tx    = db.transaction('readings','readwrite');
+      const store = tx.objectStore('readings');
+      const req   = store.clear();
+      req.onsuccess = () => res();
+      req.onerror   = e  => rej(e.target.error);
+    });
+  }
+
+  return {
+    open, add, getAllForDevice, countForDevice, countAnomalies,
+    packetLoss, getMaxRxTs, getDeviceIds, getPage, clearDevice, clearAll
+  };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   GAP TRACKER  (in-memory; gaps in table computed per-page)
+────────────────────────────────────────────────────────── */
+const GapTracker = (() => {
+  const state = {};   // state[id][boot] = {lastSeq, gapCount}
+  let total   = 0;
+
+  function track(id, boot, seq){
+    if(!state[id]) state[id]={};
+    if(!state[id][boot]){ state[id][boot]={lastSeq:seq,gapCount:0}; return; }
+    const s = state[id][boot];
+    if(seq > s.lastSeq+1){ const m=seq-s.lastSeq-1; s.gapCount+=m; total+=m; }
+    s.lastSeq = seq;
+  }
+  function getTotal(){ return total; }
+  function reset(){ Object.keys(state).forEach(k=>delete state[k]); total=0; }
+  return { track, getTotal, reset };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   DEVICE STATE  (runtime per-device data)
+────────────────────────────────────────────────────────── */
+const DeviceState = (() => {
+  const state = {};
+
+  function get(id){
+    if(!state[id]) state[id]={ lastSeen:null, last:{}, min:{}, max:{}, trend:{} };
+    return state[id];
+  }
+
+  function update(r){
+    const s = get(r.id);
+    s.lastSeen = Date.now();
+    for(const f of FIELDS){
+      const v=r[f], p=s.last[f];
+      if(p!==undefined) s.trend[f] = v>p+0.01?'↑':v<p-0.01?'↓':'→';
+      s.last[f] = v;
+      if(s.min[f]===undefined||v<s.min[f]) s.min[f]=v;
+      if(s.max[f]===undefined||v>s.max[f]) s.max[f]=v;
+    }
+  }
+  return { get, update };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   CHARTS  (Chart.js — line + anomaly scatter overlay)
+────────────────────────────────────────────────────────── */
+const Charts = (() => {
+  const charts = {};
+  const queues = { vib:[], temp:[], cur:[] };
+
+  function mkChart(cid, field){
+    const ctx = el(cid).getContext('2d');
+    charts[field] = new Chart(ctx, {
+      type:'line',
+      data:{
+        datasets:[
+          {
+            label:field,
+            data:[],
+            borderColor: CHART_CLR[field],
+            backgroundColor: CHART_CLR[field]+'1a',
+            borderWidth:2,tension:.3,pointRadius:0,fill:true,
+          },
+          {
+            label:'anom',
+            data:[],
+            type:'scatter',
+            pointRadius:5,pointHoverRadius:7,
+            pointBackgroundColor:'#f85149',
+            pointBorderColor:'#f85149',
+            showLine:false,
+          }
+        ]
+      },
+      options:{
+        animation:false,responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            callbacks:{
+              title:items => new Date(items[0].parsed.x).toLocaleTimeString()
+            }
+          }
+        },
+        scales:{
+          x:{
+            type:'linear',
+            ticks:{
+              maxTicksLimit:5,color:'var(--text-m)',font:{size:9},
+              callback:v => {
+                const d=new Date(v);
+                return String(d.getHours()).padStart(2,'0')+':'+
+                       String(d.getMinutes()).padStart(2,'0')+':'+
+                       String(d.getSeconds()).padStart(2,'0');
+              }
+            },
+            grid:{color:'rgba(128,128,128,.08)'}
+          },
+          y:{
+            ticks:{maxTicksLimit:5,color:'var(--text-m)',font:{size:9}},
+            grid:{color:'rgba(128,128,128,.08)'}
+          }
+        }
+      }
+    });
+  }
+
+  function init(){
+    mkChart('chart-vib',  'vib');
+    mkChart('chart-temp', 'temp');
+    mkChart('chart-cur',  'cur');
+  }
+
+  function push(r){
+    const win = Settings.get().chartWindow;
+    for(const f of FIELDS){
+      const q = queues[f];
+      q.push({x:r.rx_ts,y:r[f],anom:r.anom});
+      if(q.length>win) q.shift();
+
+      const ch = charts[f];
+      ch.data.datasets[0].data = q.filter(p=>!p.anom).map(p=>({x:p.x,y:p.y}));
+      ch.data.datasets[1].data = q.filter(p=> p.anom).map(p=>({x:p.x,y:p.y}));
+      ch.update('none');
+
+      el('cc-'+f).textContent = r[f].toFixed(2)+' '+UNITS[f];
+    }
+  }
+
+  function reset(){
+    for(const f of FIELDS){
+      queues[f]=[];
+      if(charts[f]){
+        charts[f].data.datasets[0].data=[];
+        charts[f].data.datasets[1].data=[];
+        charts[f].update('none');
+      }
+    }
+  }
+
+  function getB64(f){ return charts[f]?charts[f].toBase64Image():''; }
+  return { init, push, reset, getB64 };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   GAUGES
+────────────────────────────────────────────────────────── */
+const Gauges = (() => {
+  function update(r){
+    const anom = r.anom===1;
+    const ds   = DeviceState.get(r.id);
+    for(const f of FIELDS){
+      const card = el('gauge-'+f);
+      card.classList.toggle('anom', anom);
+      el('gv-'+f).textContent = r[f].toFixed(2);
+      const mn = ds.min[f]!==undefined ? ds.min[f].toFixed(2) : '—';
+      const mx = ds.max[f]!==undefined ? ds.max[f].toFixed(2) : '—';
+      el('gm-'+f).textContent = `min ${mn} / max ${mx}  ${ds.trend[f]||'→'}`;
+    }
+  }
+  return { update };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   ALERTS PANEL
+────────────────────────────────────────────────────────── */
+const Alerts = (() => {
+  const list = el('alerts-list');
+  let cnt    = 0;
+
+  function add(r){
+    if(cnt===0) list.innerHTML='';
+    if(cnt>=MAX_ALERTS) list.removeChild(list.lastChild);
+    const ts  = new Date(r.rx_ts).toLocaleTimeString();
+    const row = document.createElement('div');
+    row.className='alert-item';
+    row.innerHTML =
+      `<span class="a-time">[${ts}]</span>`+
+      `<span class="a-dev">${esc(r.id)}</span>`+
+      `<span class="a-time"> ${toHex(r.boot)} seq:${r.seq}</span>`+
+      `<span class="a-reason">${esc(r.reason||'(no reason)')}</span>`;
+    list.insertBefore(row, list.firstChild);
+    cnt++;
+  }
+
+  function clear(){
+    list.innerHTML='<div class="alerts-empty">No anomalies detected yet.</div>';
+    cnt=0;
+  }
+
+  el('btn-clr-alerts').addEventListener('click', clear);
+  return { add };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   LOG TABLE  (gap scan on visible page ± boundary row only)
+────────────────────────────────────────────────────────── */
+const LogTable = (() => {
+  let curPage = 0;
+  let activeDev = '';
+
+  async function render(){
+    if(!activeDev) return;
+    const anomOnly = el('log-anom-only').checked;
+    const search   = el('log-search').value.trim();
+    const { rows, prevRow, total, totalPages, pg } =
+      await DB.getPage(activeDev, curPage, anomOnly, search);
+    curPage = pg;
+
+    const tbody = el('log-tbody');
+    if(!rows.length){
+      tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:22px;color:var(--text-m)">
+        ${total===0?'No data yet.':'No results match your filters.'}</td></tr>`;
+      el('page-info').textContent='No results';
+      el('btn-prev').disabled=true; el('btn-next').disabled=true;
+      return;
+    }
+
+    // Gap detection on visible rows + boundary (prev page's last row)
+    const ctx   = prevRow ? [prevRow,...rows] : rows;
+    const gaps  = new Set(); // indices in rows[] that have a gap before them
+    for(let i=1;i<ctx.length;i++){
+      const p=ctx[i-1], c=ctx[i];
+      if(p.id===c.id && p.boot===c.boot && c.seq>p.seq+1){
+        gaps.add(i-(prevRow?1:0));
+      }
+    }
+
+    let html='';
+    for(let i=0;i<rows.length;i++){
+      if(gaps.has(i)){
+        const prev = i>0 ? rows[i-1] : prevRow;
+        if(prev){
+          const missing = rows[i].seq - prev.seq - 1;
+          html+=`<tr class="gap-row"><td colspan="10" class="gap-cell">
+            ⚠ Seq gap: ${toHex(rows[i].boot)} seq ${prev.seq+1}–${rows[i].seq-1}
+            (${missing} missing)</td></tr>`;
+        }
+      }
+      const r   = rows[i];
+      const ts  = new Date(r.rx_ts).toLocaleTimeString('en-GB',{hour12:false})+'.'+
+                  String(r.rx_ts%1000).padStart(3,'0');
+      const ac  = r.anom===1?'anom-row':'';
+      const chip= r.anom===1
+        ?'<span class="anom-chip yes">🔴 YES</span>'
+        :'<span class="anom-chip no">⬜ —</span>';
+      html+=`<tr class="${ac}">
+        <td class="mono">${toHex(r.boot)}</td>
+        <td class="mono">${r.seq}</td>
+        <td>${esc(r.id)}</td>
+        <td class="mono">${ts}</td>
+        <td class="mono" style="color:var(--text-m)">${r.ts}</td>
+        <td>${r.vib.toFixed(2)}</td>
+        <td>${r.temp.toFixed(2)}</td>
+        <td>${r.cur.toFixed(2)}</td>
+        <td>${chip}</td>
+        <td style="color:var(--text-m)">${esc(r.reason||'')}</td>
+      </tr>`;
+    }
+    tbody.innerHTML=html;
+    el('page-info').textContent=`Page ${pg+1} of ${totalPages}  (${total} total)`;
+    el('btn-prev').disabled = pg===0;
+    el('btn-next').disabled = pg>=totalPages-1;
+  }
+
+  function setDevice(id){ activeDev=id; curPage=0; render(); }
+  function refresh(){ render(); }
+
+  el('btn-prev').addEventListener('click', ()=>{ curPage=Math.max(0,curPage-1); render(); });
+  el('btn-next').addEventListener('click', ()=>{ curPage++; render(); });
+  el('log-search').addEventListener('input', ()=>{ curPage=0; render(); });
+  el('log-anom-only').addEventListener('change', ()=>{ curPage=0; render(); });
+
+  return { setDevice, refresh };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   HEADER / STAT BAR
+   Status: every 1 s.  Packet-loss query: every 5 s.
+────────────────────────────────────────────────────────── */
+const Header = (() => {
+  let activeDev = '';
+
+  function setDevice(id){ activeDev=id; }
+
+  function setAck(boot, seq){
+    const txt = `${toHex(boot)} seq:${seq}`;
+    el('stat-ack').textContent    = txt;
+    el('ws-ack-disp').textContent = txt;
+  }
+
+  async function tick(){
+    if(!activeDev) return;
+    const ds  = DeviceState.get(activeDev);
+    const cfg = Settings.get();
+    const now = Date.now();
+
+    const online = ds.lastSeen && (now-ds.lastSeen)<cfg.onlineTimeout*1000;
+    const badge  = el('status-badge');
+    badge.classList.toggle('online', online);
+    badge.classList.toggle('offline',!online);
+    el('status-text').textContent = online?'ONLINE':'OFFLINE';
+    el('stat-status').textContent = online?'🟢 ONLINE':'🔴 OFFLINE';
+    el('stat-last-seen').textContent = ds.lastSeen ? fmtSince(ds.lastSeen) : '—';
+
+    const [total, anoms] = await Promise.all([
+      DB.countForDevice(activeDev),
+      DB.countAnomalies(activeDev)
+    ]);
+    el('stat-total').textContent = total.toLocaleString();
+    el('stat-anoms').textContent = anoms.toLocaleString();
+    el('stat-gaps').textContent  = GapTracker.getTotal();
+  }
+
+  async function tickLoss(){
+    if(!activeDev) return;
+    const loss = await DB.packetLoss(activeDev);
+    el('stat-loss').textContent = loss>0 ? loss.toFixed(1)+'%' : '0%';
+  }
+
+  function init(){
+    setInterval(tick, 1000);
+    setInterval(tickLoss, 5000);
+    tickLoss();
+  }
+
+  return { init, setDevice, setAck };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   INGEST  (the single entry-point for all sources)
+────────────────────────────────────────────────────────── */
+async function ingest(raw){
+  // 1. Stamp rx_ts only if missing (bridge already stamps it)
+  if(raw.rx_ts==null) raw.rx_ts = Date.now();
+  const r = raw;
+
+  // 2. Validate required fields
+  if(!r.id || r.boot==null || r.seq==null ||
+     r.vib==null || r.temp==null || r.cur==null || r.anom==null){
+    console.warn('[ingest] Invalid reading dropped:', r); return;
+  }
+
+  // 3. Coerce types; enforce constraints
+  r.boot   = r.boot   >>> 0;
+  r.seq    = r.seq    >>> 0;
+  r.anom   = r.anom   ? 1 : 0;
+  r.vib    = r2(parseFloat(r.vib));
+  r.temp   = r2(parseFloat(r.temp));
+  r.cur    = r2(parseFloat(r.cur));
+  r.reason = String(r.reason||'').slice(0,16);
+  r.ts     = parseInt(r.ts)||0;
+
+  // 4. De-duplicate via store.add() — ConstraintError = duplicate
+  const isNew = await DB.add(r);
+  if(!isNew) return;
+
+  // 5. Gap tracking
+  GapTracker.track(r.id, r.boot, r.seq);
+
+  // 6. Device state
+  DeviceState.update(r);
+
+  // 7. Ensure device exists in dropdown
+  App.ensureDevice(r.id);
+
+  // 8. Only push to UI if this matches the active device
+  if(App.getActiveDev() && r.id !== App.getActiveDev()) return;
+
+  Gauges.update(r);
+  Charts.push(r);
+  if(r.anom===1) Alerts.add(r);
+  LogTable.refresh();
+}
+
+/* ──────────────────────────────────────────────────────────
+   OFFLINE QUEUE  (in-memory device-buffer simulation)
+   rx_ts is stamped at ENQUEUE time, not flush time.
+────────────────────────────────────────────────────────── */
+const Queue = (() => {
+  let dropped = false;
+  const buf   = [];
+
+  function enqueue(r){
+    r.rx_ts = r.rx_ts ?? Date.now();   // stamp NOW
+    buf.push(r);
+    el('queue-count').textContent = buf.length;
+    el('queue-badge').classList.add('vis');
+  }
+
+  function isDropped(){ return dropped; }
+
+  function drop(){
+    dropped=true;
+    el('btn-drop').disabled=true;
+    el('btn-reconnect').disabled=false;
+  }
+
+  async function reconnect(){
+    dropped=false;
+    const items = buf.splice(0);
+    el('queue-badge').classList.remove('vis');
+    el('queue-count').textContent='0';
+    el('btn-drop').disabled=false;
+    el('btn-reconnect').disabled=true;
+    for(const r of items) await ingest(r);   // flush in order; rx_ts preserved
+  }
+
+  el('btn-drop').addEventListener('click',      drop);
+  el('btn-reconnect').addEventListener('click', reconnect);
+  return { enqueue, isDropped };
+})();
+
+/** Route a reading through the queue or directly to ingest */
+function dispatch(r){
+  Queue.isDropped() ? Queue.enqueue(r) : ingest(r);
+}
+
+/* ──────────────────────────────────────────────────────────
+   SIMULATOR
+────────────────────────────────────────────────────────── */
+const Simulator = (() => {
+  let timer=null, seq=0, boot=newBoot(), running=false;
+
+  function tick(){
+    const hz    = parseInt(el('sim-hz').value);
+    const base  = {
+      vib:  parseFloat(el('sim-vib').value),
+      temp: parseFloat(el('sim-temp').value),
+      cur:  parseFloat(el('sim-cur').value),
+    };
+    const noise = parseFloat(el('sim-noise').value);
+    const anom  = el('sim-anom').checked ? 1 : 0;
+
+    dispatch({
+      id:'motor01', boot, seq:seq++,
+      ts: Math.floor(Date.now()/1000),
+      vib:  r2(clamp(base.vib  + noise*gauss()*2,   0,10)),
+      temp: r2(clamp(base.temp + noise*gauss()*8,   0,200)),
+      cur:  r2(clamp(base.cur  + noise*gauss()*.5,  0,15)),
+      anom, reason: anom?'SIM_FLAG':'',
+    });
+    el('sim-seq-disp').textContent = seq;
+  }
+
+  function start(){
+    if(running) return;
+    running=true;
+    const hz=parseInt(el('sim-hz').value);
+    timer=setInterval(tick, Math.round(1000/hz));
+    el('btn-sim-toggle').textContent='⏹ Stop';
+    el('sim-boot-disp').textContent = toHex(boot);
+  }
+
+  function stop(){ clearInterval(timer); running=false; el('btn-sim-toggle').textContent='▶ Start'; }
+  function toggle(){ running?stop():start(); }
+
+  function restart(){
+    stop(); boot=newBoot(); seq=0;
+    Charts.reset();
+    el('sim-boot-disp').textContent=toHex(boot);
+    el('sim-seq-disp').textContent='0';
+    setTimeout(start,50);
+  }
+
+  function bindSlider(id,vid,fmt){
+    const s=el(id);
+    s.addEventListener('input',()=>{ el(vid).textContent=fmt(parseFloat(s.value)); });
+  }
+  bindSlider('sim-hz',   'sim-hz-v',    v=>v+' Hz');
+  bindSlider('sim-vib',  'sim-vib-v',   v=>v.toFixed(1));
+  bindSlider('sim-temp', 'sim-temp-v',  v=>v.toFixed(0));
+  bindSlider('sim-cur',  'sim-cur-v',   v=>v.toFixed(1));
+  bindSlider('sim-noise','sim-noise-v', v=>v.toFixed(2));
+
+  el('sim-hz').addEventListener('input', ()=>{ if(running){stop();start();} });
+  el('btn-sim-toggle').addEventListener('click',  toggle);
+  el('btn-sim-restart').addEventListener('click', restart);
+  return { start, stop };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   MANUAL SOURCE
+────────────────────────────────────────────────────────── */
+const Manual = (() => {
+  const boot=newBoot(); let seq=0; let autoTimer=null;
+
+  function bindSlider(id,vid,fmt){
+    const s=el(id);
+    s.addEventListener('input',()=>{ el(vid).textContent=fmt(parseFloat(s.value)); });
+  }
+  bindSlider('man-vib',  'man-vib-v',  v=>v.toFixed(2));
+  bindSlider('man-temp', 'man-temp-v', v=>v.toFixed(1));
+  bindSlider('man-cur',  'man-cur-v',  v=>v.toFixed(2));
+
+  el('man-boot-disp').textContent=toHex(boot);
+
+  function sendOne(){
+    const id    = (el('man-dev-id').value.trim()||'motor01');
+    const anom  = el('man-anom').checked?1:0;
+    const reason= el('man-reason').value.trim().slice(0,16);
+    dispatch({
+      id, boot, seq:seq++,
+      ts:   Math.floor(Date.now()/1000),
+      vib:  parseFloat(el('man-vib').value),
+      temp: parseFloat(el('man-temp').value),
+      cur:  parseFloat(el('man-cur').value),
+      anom, reason: anom?(reason||'MANUAL'):'',
+    });
+  }
+
+  el('btn-man-send').addEventListener('click', sendOne);
+  el('man-auto').addEventListener('change', function(){
+    autoTimer = this.checked ? setInterval(sendOne,1000) : clearInterval(autoTimer)||null;
+  });
+  return {};
+})();
+
+/* ──────────────────────────────────────────────────────────
+   REPLAY SOURCE  (proper quoted-CSV parser)
+────────────────────────────────────────────────────────── */
+const Replay = (() => {
+  let rows=[],idx=0,timer=null,paused=false;
+
+  /** Split a single CSV row respecting quoted fields */
+  function splitRow(line){
+    const out=[]; let cur='',q=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){
+        if(q && line[i+1]==='"'){ cur+='"'; i++; }
+        else q=!q;
+      } else if(c===','&&!q){ out.push(cur); cur=''; }
+      else cur+=c;
+    }
+    out.push(cur); return out;
+  }
+
+  function parseCSV(text){
+    const lines=text.split(/\r?\n/).filter(l=>l.trim());
+    if(!lines.length) return [];
+    const hdr=splitRow(lines[0]).map(h=>h.trim());
+    return lines.slice(1).map(l=>{
+      const vals=splitRow(l);
+      const obj={};
+      hdr.forEach((h,i)=>{ obj[h]=vals[i]!==undefined?vals[i].trim():''; });
+      return obj;
+    }).filter(o=>o.id);
+  }
+
+  function norm(o){
+    return {
+      id:     String(o.id||'motor01'),
+      boot:   parseInt(o.boot)||0,
+      seq:    parseInt(o.seq)||0,
+      ts:     parseInt(o.ts)||0,
+      vib:    parseFloat(o.vib)||0,
+      temp:   parseFloat(o.temp)||0,
+      cur:    parseFloat(o.cur)||0,
+      anom:   parseInt(o.anom)||0,
+      reason: String(o.reason||'').slice(0,16),
+    };
+  }
+
+  function loadFile(file){
+    new FileReader().onload=e=>{
+      const txt=e.target.result;
+      let parsed;
+      try{ const j=JSON.parse(txt); parsed=Array.isArray(j)?j:[j]; }
+      catch{ parsed=parseCSV(txt); }
+      rows=parsed.map(norm).filter(r=>r.id);
+      el('replay-fname').textContent=file.name;
+      el('replay-cnt').textContent=rows.length;
+      el('replay-info').style.display='block';
+      el('replay-prog').style.width='0%';
+      idx=0;
+    };
+    const fr=new FileReader(); fr.onload=e=>{
+      const txt=e.target.result; let parsed;
+      try{ const j=JSON.parse(txt); parsed=Array.isArray(j)?j:[j]; }
+      catch{ parsed=parseCSV(txt); }
+      rows=parsed.map(norm).filter(r=>r.id);
+      el('replay-fname').textContent=file.name;
+      el('replay-cnt').textContent=rows.length;
+      el('replay-info').style.display='block';
+      el('replay-prog').style.width='0%';
+      idx=0;
+    };
+    fr.readAsText(file);
+  }
+
+  function play(){
+    if(!rows.length) return;
+    paused=false;
+    const speed    = parseInt(el('replay-speed').value);
+    const newSess  = el('replay-new-sess').checked;
+    const loop     = el('replay-loop').checked;
+    const freshBoot= newBoot();
+    const interval = Math.max(50, Math.round(1000/speed));
+
+    // Pre-build scheduled list (rx_ts = now + index * interval)
+    const t0=Date.now();
+    const sched=rows.map((row,i)=>({
+      ...row,
+      boot:   newSess ? freshBoot : row.boot,
+      rx_ts:  t0 + i*interval,
+    }));
+    idx=0; clearInterval(timer);
+
+    timer=setInterval(()=>{
+      if(paused||idx>=sched.length){
+        if(idx>=sched.length){
+          clearInterval(timer);
+          el('btn-replay-play').disabled=false;
+          el('btn-replay-pause').disabled=true;
+          if(loop){ idx=0; setTimeout(play,500); }
+        }
+        return;
+      }
+      dispatch(sched[idx]);
+      el('replay-prog').style.width=Math.round((idx/sched.length)*100)+'%';
+      idx++;
+    }, interval);
+
+    el('btn-replay-play').disabled=true;
+    el('btn-replay-pause').disabled=false;
+  }
+
+  function pause(){
+    paused=!paused;
+    el('btn-replay-pause').textContent=paused?'▶ Resume':'⏸ Pause';
+  }
+
+  const dz=el('drop-zone'), fi=el('replay-file');
+  fi.addEventListener('change', e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
+  dz.addEventListener('dragover',  e=>{ e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', ()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+  el('btn-replay-play').addEventListener('click',  play);
+  el('btn-replay-pause').addEventListener('click', pause);
+  return {};
+})();
+
+/* ──────────────────────────────────────────────────────────
+   PHONE SENSOR  (DeviceMotion, high-pass gravity filter)
+   α=0.8 exponential high-pass filter removes ~9.8 m/s² baseline.
+────────────────────────────────────────────────────────── */
+const Phone = (() => {
+  let handler=null, seq=0;
+  const boot=newBoot();
+  const grav={x:0,y:0,z:0};
+  const ALPHA=0.8;
+
+  async function requestPermission(){
+    if(!window.DeviceMotionEvent){
+      el('phone-status').textContent='❌ DeviceMotion not supported on this device.';
+      return;
+    }
+    if(typeof DeviceMotionEvent.requestPermission==='function'){
+      try{
+        const r=await DeviceMotionEvent.requestPermission();
+        if(r==='granted'){
+          el('phone-status').textContent='✅ Permission granted. Click Start.';
+          el('btn-phone-start').disabled=false;
+        } else {
+          el('phone-status').textContent='❌ Permission denied by user.';
+        }
+      } catch(e){
+        el('phone-status').textContent='❌ Error: '+e.message;
+      }
+    } else {
+      el('phone-status').textContent='✅ No permission required on this browser. Click Start.';
+      el('btn-phone-start').disabled=false;
+    }
+  }
+
+  function start(){
+    handler=e=>{
+      const acc=e.accelerationIncludingGravity;
+      if(!acc) return;
+      const rx=acc.x||0, ry=acc.y||0, rz=acc.z||0;
+      // High-pass: low-pass = gravity, high-pass = raw - gravity
+      grav.x+=ALPHA*(rx-grav.x);
+      grav.y+=ALPHA*(ry-grav.y);
+      grav.z+=ALPHA*(rz-grav.z);
+      const dx=rx-grav.x, dy=ry-grav.y, dz=rz-grav.z;
+      const vib=r2(Math.sqrt(dx*dx+dy*dy+dz*dz));
+      el('phone-raw').textContent=
+        `raw=(${rx.toFixed(2)},${ry.toFixed(2)},${rz.toFixed(2)}) `+
+        `grav=(${grav.x.toFixed(2)},${grav.y.toFixed(2)},${grav.z.toFixed(2)}) `+
+        `vib=${vib}`;
+      dispatch({
+        id:'phone_sensor', boot, seq:seq++,
+        ts:Math.floor(Date.now()/1000),
+        vib,
+        temp:r2(parseFloat(el('man-temp').value)),
+        cur: r2(parseFloat(el('man-cur').value)),
+        anom:0, reason:'',
+      });
+    };
+    window.addEventListener('devicemotion',handler);
+    el('btn-phone-start').disabled=true;
+    el('btn-phone-stop').disabled=false;
+    el('phone-status').textContent='📡 Listening to DeviceMotion…';
+  }
+
+  function stop(){
+    if(handler){ window.removeEventListener('devicemotion',handler); handler=null; }
+    el('btn-phone-start').disabled=false;
+    el('btn-phone-stop').disabled=true;
+    el('phone-status').textContent='Stopped.';
+  }
+
+  el('btn-phone-perm').addEventListener('click',  requestPermission);
+  el('btn-phone-start').addEventListener('click', start);
+  el('btn-phone-stop').addEventListener('click',  stop);
+  return {};
+})();
+
+/* ──────────────────────────────────────────────────────────
+   WEBSOCKET SOURCE
+   Typed frame protocol:
+     → {"type":"hello","since":<last rx_ts>}    sent by browser on connect
+     ← {"type":"reading",...}                   sensor reading from bridge
+     ← {"type":"ack","boot":..,"seq":..}        ACK info from bridge
+   ws:// warning shown only on HTTPS + non-localhost.
+────────────────────────────────────────────────────────── */
+const WSSource = (() => {
+  let ws=null, rcnt=0, byteN=0, msgsN=0, rateTimer=null;
+
+  function setState(s){
+    const chip=el('ws-state-chip');
+    chip.textContent=s.toUpperCase(); chip.className='ws-state '+s.toLowerCase();
+    el('btn-ws-connect').disabled = s==='open';
+    el('btn-ws-disc').disabled    = s!=='open';
+  }
+
+  function checkWarn(){
+    const url=el('ws-url').value.trim();
+    const https = location.protocol==='https:';
+    const isWs  = url.startsWith('ws://');
+    const isLocal=url.includes('localhost')||url.includes('127.0.0.1');
+    el('ws-warn').style.display=(https&&isWs&&!isLocal)?'flex':'none';
+  }
+  el('ws-url').addEventListener('input', checkWarn);
+
+  async function connect(){
+    const url=el('ws-url').value.trim();
+    checkWarn();
+    if(ws) ws.close();
+    setState('connecting');
+    ws=new WebSocket(url);
+
+    ws.onopen=async()=>{
+      setState('open'); rcnt=0;
+      const dev   = App.getActiveDev();
+      const since = dev ? await DB.getMaxRxTs(dev) : 0;
+      ws.send(JSON.stringify({type:'hello',since}));
+      rateTimer=setInterval(()=>{
+        el('ws-rate').textContent=msgsN+'/s'; msgsN=0;
+      },1000);
+    };
+
+    ws.onmessage=e=>{
+      byteN+=e.data.length||0;
+      msgsN++;
+      el('ws-bytes').textContent=fmtBytes(byteN);
+      let frame; try{ frame=JSON.parse(e.data); } catch{ return; }
+      if(frame.type==='reading') dispatch(frame);          // rx_ts from bridge preserved
+      else if(frame.type==='ack') Header.setAck(frame.boot,frame.seq);
+    };
+
+    ws.onerror=()=>setState('error');
+    ws.onclose=()=>{
+      setState('closed'); clearInterval(rateTimer);
+      el('ws-rate').textContent='—';
+      if(rcnt<3){ const d=Math.pow(2,rcnt)*1000; rcnt++; setTimeout(connect,d); }
+    };
+  }
+
+  function disconnect(){ rcnt=99; if(ws) ws.close(); }
+
+  el('btn-ws-connect').addEventListener('click', connect);
+  el('btn-ws-disc').addEventListener('click',    disconnect);
+  return {};
+})();
+
+/* ──────────────────────────────────────────────────────────
+   EXPORT
+────────────────────────────────────────────────────────── */
+const Export = (() => {
+  function fmtField(v){
+    const s=String(v==null?'':v);
+    return (s.includes(',')||s.includes('"')||s.includes('\n'))
+      ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+
+  async function csv(){
+    const id=App.getActiveDev(); if(!id){alert('No device selected.');return;}
+    const rows=await DB.getAllForDevice(id);
+    const hdr='id,boot,seq,ts,rx_ts,vib,temp,cur,anom,reason';
+    const body=rows.map(r=>[r.id,r.boot,r.seq,r.ts,r.rx_ts,r.vib,r.temp,r.cur,r.anom,r.reason]
+                              .map(fmtField).join(','));
+    dl(hdr+'\n'+body.join('\n'), `pmm_${id}_${Date.now()}.csv`,'text/csv');
+  }
+
+  async function json(){
+    const id=App.getActiveDev(); if(!id){alert('No device selected.');return;}
+    const rows=await DB.getAllForDevice(id);
+    dl(JSON.stringify(rows,null,2),`pmm_${id}_${Date.now()}.json`,'application/json');
+  }
+
+  function dl(content,name,mime){
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([content],{type:mime}));
+    a.download=name; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function clearDev(){
+    const id=App.getActiveDev(); if(!id) return;
+    if(!confirm(`Delete ALL data for device "${id}"?\nThis cannot be undone.`)) return;
+    await DB.clearDevice(id);
+    GapTracker.reset(); Charts.reset(); LogTable.refresh(); App.refreshDevs();
+  }
+
+  async function clearAll(){
+    if(!confirm('Delete ALL data for ALL devices?\nThis cannot be undone.')) return;
+    await DB.clearAll();
+    GapTracker.reset(); Charts.reset(); LogTable.refresh(); App.refreshDevs();
+  }
+
+  el('btn-exp-csv').addEventListener('click',  csv);
+  el('btn-exp-json').addEventListener('click', json);
+  el('btn-clr-dev').addEventListener('click',  clearDev);
+  el('btn-clr-all').addEventListener('click',  clearAll);
+  return {};
+})();
+
+/* ──────────────────────────────────────────────────────────
+   SHARING  (URL hash, QR modal, print report)
+────────────────────────────────────────────────────────── */
+const Sharing = (() => {
+  function encodeHash(cfg){
+    return '#cfg='+btoa(JSON.stringify(cfg));
+  }
+
+  function shareUrl(){
+    const cfg={
+      onlineTimeout: Settings.get().onlineTimeout,
+      chartWindow:   Settings.get().chartWindow,
+      theme:         Settings.get().theme,
+      deviceId:      App.getActiveDev(),
+    };
+    return location.origin+location.pathname+encodeHash(cfg);
+  }
+
+  function loadHash(){
+    if(!location.hash.startsWith('#cfg=')) return;
+    try{
+      const cfg=JSON.parse(atob(location.hash.slice(5)));
+      const s=Settings.get();
+      if(cfg.onlineTimeout) s.onlineTimeout=cfg.onlineTimeout;
+      if(cfg.chartWindow)   s.chartWindow=cfg.chartWindow;
+      if(cfg.theme)         Settings.applyTheme(cfg.theme);
+      if(cfg.deviceId)      App.setActiveDev(cfg.deviceId);
+      Settings.save();
+    } catch(e){ console.warn('[share] hash parse error',e); }
+  }
+
+  function showQR(){
+    const isFile=location.protocol==='file:';
+    const url = isFile
+      ? location.pathname+'#cfg='+btoa(JSON.stringify({
+          onlineTimeout:Settings.get().onlineTimeout,
+          chartWindow:Settings.get().chartWindow,
+          theme:Settings.get().theme,
+          deviceId:App.getActiveDev(),
+        }))
+      : shareUrl();
+
+    el('share-url').textContent=url;
+    el('file-host-note').style.display=isFile?'flex':'none';
+    el('qr-overlay').classList.add('open');
+
+    const wrap=el('qr-wrap'); wrap.innerHTML='';
+    try{
+      new QRCode(wrap,{
+        text:url,width:180,height:180,
+        colorDark:'#e6edf3',colorLight:'#161b22',
+        correctLevel:QRCode.CorrectLevel.M,
+      });
+    } catch(e){ wrap.textContent='QR unavailable: '+e.message; }
+  }
+
+  function print(){
+    el('print-ts').textContent='Generated: '+new Date().toLocaleString();
+    const pc=el('print-charts'); pc.innerHTML='';
+    for(const f of FIELDS){
+      const lbl=document.createElement('div');
+      lbl.textContent=f.toUpperCase()+' ('+UNITS[f]+')';
+      lbl.style.cssText='font-weight:700;font-size:.85rem;margin-bottom:4px;';
+      const img=document.createElement('img');
+      img.src=Charts.getB64(f);
+      img.style.cssText='width:100%;height:auto;margin-bottom:14px;';
+      pc.appendChild(lbl); pc.appendChild(img);
+    }
+    const pa=el('print-alerts');
+    pa.innerHTML='<h2 style="font-size:.95rem;margin:14px 0 6px">Anomaly Alerts</h2>';
+    pa.appendChild(el('alerts-list').cloneNode(true));
+    el('print-section').style.display='block';
+    window.print();
+    setTimeout(()=>{ el('print-section').style.display='none'; },800);
+  }
+
+  function fileWarn(){
+    if(location.protocol==='file:') el('file-warn').style.display='inline';
+  }
+
+  el('btn-share').addEventListener('click',  showQR);
+  el('btn-print').addEventListener('click',  print);
+  el('btn-qr-close').addEventListener('click',()=>el('qr-overlay').classList.remove('open'));
+  el('btn-copy-url').addEventListener('click',()=>{
+    navigator.clipboard.writeText(el('share-url').textContent)
+      .then(()=>alert('URL copied to clipboard!'))
+      .catch(()=>{ prompt('Copy this URL:',el('share-url').textContent); });
+  });
+  el('qr-overlay').addEventListener('click',function(e){
+    if(e.target===this) this.classList.remove('open');
+  });
+
+  return { loadHash, fileWarn };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   SETTINGS DRAWER
+────────────────────────────────────────────────────────── */
+const SettingsUI = (() => {
+  const ov=el('set-overlay'), dw=el('settings-drawer');
+  const open =()=>{ ov.classList.add('open'); dw.classList.add('open'); };
+  const close=()=>{
+    ov.classList.remove('open'); dw.classList.remove('open');
+    Settings.saveFromUI();
+  };
+  el('btn-settings').addEventListener('click',   open);
+  el('btn-set-close').addEventListener('click',  close);
+  ov.addEventListener('click', close);
+  el('set-dark').addEventListener('click',  ()=>Settings.applyTheme('dark'));
+  el('set-light').addEventListener('click', ()=>Settings.applyTheme('light'));
+  return {};
+})();
+
+/* ──────────────────────────────────────────────────────────
+   TAB NAVIGATION
+────────────────────────────────────────────────────────── */
+(()=>{
+  const btns  = document.querySelectorAll('.tab-btn[data-tab]');
+  const panels= document.querySelectorAll('.tab-panel');
+  btns.forEach(b=>b.addEventListener('click',()=>{
+    const t=b.dataset.tab;
+    btns.forEach(x=>{ x.classList.remove('active'); x.setAttribute('aria-selected','false'); });
+    panels.forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); b.setAttribute('aria-selected','true');
+    el('tab-'+t).classList.add('active');
+  }));
+})();
+
+/* ──────────────────────────────────────────────────────────
+   DEMO GUIDE
+────────────────────────────────────────────────────────── */
+(()=>{
+  const body=el('demo-body'), chev=el('demo-chevron'), tog=el('demo-toggle');
+  const toggle=()=>{
+    const open=body.classList.toggle('open');
+    chev.textContent=open?'▲':'▼';
+    tog.setAttribute('aria-expanded',open);
+  };
+  tog.addEventListener('click', toggle);
+  tog.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();} });
+})();
+
+/* ──────────────────────────────────────────────────────────
+   THEME TOGGLE
+────────────────────────────────────────────────────────── */
+el('btn-theme').addEventListener('click', ()=>{
+  Settings.applyTheme(Settings.get().theme==='dark'?'light':'dark');
+});
+
+/* ──────────────────────────────────────────────────────────
+   APP  (device management + init)
+────────────────────────────────────────────────────────── */
+const App = (() => {
+  let activeDev='';
+
+  function getActiveDev(){ return activeDev; }
+
+  function setActiveDev(id){
+    if(!id) return;
+    activeDev=id;
+    const sel=el('device-select');
+    if(sel.value!==id) sel.value=id;
+    Header.setDevice(id);
+    LogTable.setDevice(id);
+  }
+
+  function ensureDevice(id){
+    const sel=el('device-select');
+    if(![...sel.options].some(o=>o.value===id)){
+      const ph=sel.querySelector('option[value=""]');
+      if(ph) sel.removeChild(ph);
+      const opt=document.createElement('option');
+      opt.value=id; opt.textContent=id;
+      sel.appendChild(opt);
+    }
+    if(!activeDev) setActiveDev(id);
+  }
+
+  async function refreshDevs(){
+    const ids=await DB.getDeviceIds();
+    const sel=el('device-select');
+    sel.innerHTML='';
+    if(!ids.length){
+      sel.innerHTML='<option value="">— No device yet —</option>';
+      activeDev=''; return;
+    }
+    ids.forEach(id=>{
+      const o=document.createElement('option');
+      o.value=id; o.textContent=id; sel.appendChild(o);
+    });
+    if(!activeDev||!ids.includes(activeDev)) setActiveDev(ids[0]);
+    else sel.value=activeDev;
+    LogTable.refresh();
+  }
+
+  el('device-select').addEventListener('change',function(){ setActiveDev(this.value); });
+
+  async function init(){
+    Settings.load();
+    await DB.open();
+    Charts.init();
+    Header.init();
+    await refreshDevs();
+    Sharing.loadHash();
+    Sharing.fileWarn();
+  }
+
+  return { init, getActiveDev, setActiveDev, ensureDevice, refreshDevs };
+})();
+
+/* ──────────────────────────────────────────────────────────
+   BOOT
+────────────────────────────────────────────────────────── */
+App.init().catch(err=>{
+  console.error('[PMM] Init failed:', err);
+  document.body.insertAdjacentHTML('afterbegin',
+    `<div style="background:#f85149;color:#fff;padding:12px;font-weight:700;font-size:.9rem">
+      ⚠ PMM failed to start: ${err.message}. Check browser console for details.
+    </div>`);
+});
+</script>
+</body>
+</html>

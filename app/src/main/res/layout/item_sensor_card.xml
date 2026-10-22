@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_sensor"
+    style="@style/Widget.Cogxar.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/spacing_xs">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Top Row: Icon + Sensor Name -->
+        <ImageView
+            android:id="@+id/iv_sensor_icon"
+            android:layout_width="@dimen/icon_size_md"
+            android:layout_height="@dimen/icon_size_md"
+            android:contentDescription="@string/cd_sensor_icon"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/accent_brand"
+            tools:src="@drawable/ic_thermometer" />
+
+        <TextView
+            android:id="@+id/tv_sensor_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="2"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_size_xs"
+            app:layout_constraintBottom_toBottomOf="@id/iv_sensor_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_sensor_icon"
+            app:layout_constraintTop_toTopOf="@id/iv_sensor_icon"
+            tools:text="Temperature Sensor" />
+
+        <!-- Metric Value: Monospace tabular digits -->
+        <TextView
+            android:id="@+id/tv_sensor_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:fontFamily="monospace"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_metric"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/iv_sensor_icon"
+            tools:text="72.0" />
+
+        <!-- Sensor Unit -->
+        <TextView
+            android:id="@+id/tv_sensor_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_xs"
+            android:layout_marginBottom="4dp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_size_sm"
+            app:layout_constraintBottom_toBottomOf="@id/tv_sensor_value"
+            app:layout_constraintStart_toEndOf="@id/tv_sensor_value"
+            tools:text="°C" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

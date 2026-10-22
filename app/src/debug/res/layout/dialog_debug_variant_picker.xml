@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/bg_card"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_lg">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:text="Debug Mock Scenario"
+        android:textColor="@color/accent_brand"
+        android:textSize="@dimen/text_size_title" />
+
+
+    <RadioGroup
+        android:id="@+id/rg_mock_variants"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_md">
+
+        <RadioButton
+            android:id="@+id/rb_variant_normal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Normal (Live Telemetry, Running)"
+            android:textColor="@color/text_primary" />
+
+        <RadioButton
+            android:id="@+id/rb_variant_anomaly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Anomaly Flagged (Red card, Alert)"
+            android:textColor="@color/status_red" />
+
+        <RadioButton
+            android:id="@+id/rb_variant_offline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Device Offline (Offline banner priority)"
+            android:textColor="@color/status_red" />
+
+        <RadioButton
+            android:id="@+id/rb_variant_stale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Stale Data (Older than 30s threshold)"
+            android:textColor="@color/status_amber" />
+
+        <RadioButton
+            android:id="@+id/rb_variant_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No Data (Machine with 0 readings)"
+            android:textColor="@color/text_muted" />
+
+        <RadioButton
+            android:id="@+id/rb_variant_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server Error (503 / Network failure)"
+            android:textColor="@color/status_red" />
+
+    </RadioGroup>
+
+</LinearLayout>

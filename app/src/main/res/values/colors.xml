@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Palette A: Industrial Graphite & Amber -->
+    <color name="bg_base">#14161A</color>
+    <color name="bg_card">#1D2025</color>
+    <color name="bg_panel">#23272C</color>
+    <color name="bg_input">#181B20</color>
+    <color name="border_subtle">#2E3238</color>
+    <color name="border_card">#2E3238</color>
+
+    <!-- Single Brand Accent: Industrial Amber -->
+    <color name="accent_blue">#E0A030</color> <!-- Keep alias for existing references -->
+    <color name="accent_brand">#E0A030</color>
+    <color name="accent_brand_dim">#26E0A030</color>
+    <color name="accent_blue_dim">#26E0A030</color>
+
+    <!-- Muted Industrial Status Colors (Never neon) -->
+    <!-- Running: #4C9A6A -->
+    <color name="status_green">#4C9A6A</color>
+    <color name="status_green_dim">#264C9A6A</color>
+    <!-- Warning or Stopped: #D08A2E -->
+    <color name="status_amber">#D08A2E</color>
+    <color name="status_amber_dim">#26D08A2E</color>
+    <!-- Anomaly or Offline: #C4513F -->
+    <color name="status_red">#C4513F</color>
+    <color name="status_red_dim">#26C4513F</color>
+
+    <!-- Typography: Neutral Warm Greys -->
+    <color name="text_primary">#E7E5E0</color>
+    <color name="text_secondary">#8E918F</color>
+    <color name="text_muted">#686B69</color>
+
+    <!-- Shimmer Skeleton Loading -->
+    <color name="shimmer_base">#1D2025</color>
+    <color name="shimmer_highlight">#2E3238</color>
+
+    <!-- System & Navigation Bars -->
+    <color name="nav_bar_bg">#14161A</color>
+    <color name="transparent">#00000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
